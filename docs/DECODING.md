@@ -9,8 +9,9 @@
 - [Fixed inline columns](#fixed-inline-columns)
 - [Dynamic inline columns](#dynamic-inline-columns)
 - [Custom unmarshaler](#custom-unmarshaler)
+- [Custom column delimiter](#custom-column-delimiter)
 - [Header localization](#header-localization)
-- [Render error in human readable content](#render-error-in-human-readable-content)
+- [Render error as human-readable format](#render-error-as-human-readable-format)
 
 ## Content
 
@@ -331,6 +332,40 @@ tom,1989-11-11`)
     // {Name:tom BirthDate:1989-11-11}
 ```
 
+### Custom column delimiter
+
+- By default, the decoder detects columns via comma delimiter, if you want to decode custom one, use `csv.Reader` from the built-in package `encoding/csv` as the input reader.
+
+```go
+    data := []byte(
+        "name\tage\taddress\n" +
+        "jerry\t10\ttokyo\n" +
+        "tom\t9\tnew york\n",
+    )
+
+    type Student struct {
+        Name    string `csv:"name"`
+        Age     int    `csv:"age"`
+        Address string `csv:"address,optional"`
+    }
+
+    var students []Student
+    reader := csv.NewReader(bytes.NewReader(data))
+    reader.Comma = '\t'
+    _, err := csvlib.NewDecoder(reader).Decode(&students)
+    if err != nil {
+        fmt.Println("error:", err)
+    }
+
+    for _, u := range students {
+        fmt.Printf("%+v\n", u)
+    }
+    
+    // Output:
+    // {Name:jerry Age:10 Address:tokyo}
+    // {Name:tom Age:9 Address:new york}
+```
+
 ### Header localization
 
 - This functionality allows to decode multiple input data with header translated into specific language
@@ -407,9 +442,9 @@ tom,19,new york`)
     // {Name:tom Age:19 Address:new york}
 ```
 
-### Render error in human readable content
+### Render error as human-readable format
 
-- Decoding errors can be rendered as a more human readable content such as text or CSV.
+- Decoding errors can be rendered as a more human-readable content such as text or CSV.
 
 ```go
     data := []byte(`
@@ -467,14 +502,13 @@ jj,40,`)
 
 
 ```go
-
     renderer, _ := csvlib.NewCSVRenderer(err.(*csvlib.Errors), func(cfg *csvlib.CSVRenderConfig) {
         cfg.CellSeparator = "\n"
     })
     msg, _, _ := renderer.RenderAsString()
     fmt.Println(msg)
 
-    // output
+    // Output:
     // |------|--------|--------------|--------------------------------------------------------|----------------------------------|----------|                            
     // |  Row |  Line  | CommonError  |  name                                                  | age                              | address  |                            
     // |------|--------|--------------|--------------------------------------------------------|----------------------------------|----------|                            
