@@ -254,7 +254,7 @@ func (r *SimpleRenderer) localizeKey(key string, params ParameterMap) (string, e
 	}
 	msg, err := r.cfg.LocalizationFunc(key, params)
 	if err != nil {
-		err = multierror.Append(ErrLocalizationFailed, err)
+		err = multierror.Append(ErrLocalization, err)
 		r.transErr = multierror.Append(r.transErr, err)
 		return "", err
 	}

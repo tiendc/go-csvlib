@@ -156,17 +156,17 @@ func (e *Encoder) flushWriter() {
 
 func (e *Encoder) canEncode() error {
 	if e.finished {
-		return ErrEncodeAlreadyFinished
+		return ErrFinished
 	}
 	if e.err != nil {
-		return ErrEncodeAlreadyFailed
+		return ErrAlreadyFailed
 	}
 	return nil
 }
 
 func (e *Encoder) prepareEncode(v reflect.Value) error {
 	if e.itemType != nil {
-		return fmt.Errorf("%w: item type already parsed", ErrEncodeUnexpected)
+		return fmt.Errorf("%w: item type already parsed", ErrUnexpected)
 	}
 	itemType, err := e.parseInputVar(v)
 	if err != nil {
@@ -194,7 +194,7 @@ func (e *Encoder) prepareEncode(v reflect.Value) error {
 
 func (e *Encoder) encodeHeader() error {
 	if e.headerWritten {
-		return fmt.Errorf("%w: header already encoded", ErrEncodeUnexpected)
+		return fmt.Errorf("%w: header already encoded", ErrUnexpected)
 	}
 	record := make([]string, 0, len(e.colsMeta))
 	for _, colMeta := range e.colsMeta {
@@ -544,7 +544,7 @@ func (m *encodeColumnMeta) localizeHeader(cfg *EncodeConfig) error {
 	if cfg.LocalizeHeader {
 		headerText, err := cfg.LocalizationFunc(m.headerKey, nil)
 		if err != nil {
-			return multierror.Append(ErrLocalizationFailed, err)
+			return multierror.Append(ErrLocalization, err)
 		}
 		m.headerText = headerText
 	}
