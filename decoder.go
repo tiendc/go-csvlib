@@ -297,10 +297,11 @@ func (d *Decoder) prepareDecode(v reflect.Value) error {
 
 // decodeRow decode row data and write the result to the row target value
 // `rowVal` is normally a slice item at a specific index
+// nolint: gocognit
 func (d *Decoder) decodeRow(rowData *rowData, rowVal reflect.Value) error {
 	cfg, colsMeta := d.cfg, d.colsMeta
-	rowErr := NewRowErrors(rowData.row, rowData.line)
 	if rowData.err != nil {
+		rowErr := NewRowErrors(rowData.row, rowData.line)
 		rowErr.Add(d.handleCellError(rowData.err, "", nil))
 		return rowErr
 	}
@@ -313,8 +314,8 @@ func (d *Decoder) decodeRow(rowData *rowData, rowVal reflect.Value) error {
 		}
 	}
 
-	for col, cellTextOrig := range rowData.records {
-		cellText := cellTextOrig
+	var cellErrs []error
+	for col, cellText := range rowData.records {
 		colMeta := colsMeta[col]
 		if colMeta.unrecognized {
 			continue
@@ -331,22 +332,28 @@ func (d *Decoder) decodeRow(rowData *rowData, rowVal reflect.Value) error {
 			outVal = colMeta.inlineColumnMeta.decodeGetColumnValue(outVal)
 		}
 
-		err := colMeta.decodeFunc(cellText, outVal)
+		var err error
 		var errs []error
+		if !colMeta.omitempty || cellText != "" {
+			err = colMeta.decodeFunc(cellText, outVal)
+		}
+
 		if err != nil {
 			errs = []error{err}
 		} else {
 			errs = d.validateParsedCell(outVal, colMeta)
 		}
-		for _, err := range errs {
-			rowErr.Add(d.handleCellError(err, cellTextOrig, colMeta))
+		for _, err = range errs {
+			cellErrs = append(cellErrs, d.handleCellError(err, rowData.records[col], colMeta))
 			if cfg.StopOnError || colMeta.stopOnError {
 				d.shouldStop = true
-				return rowErr
+				break
 			}
 		}
 	}
-	if rowErr.HasError() {
+	if len(cellErrs) > 0 {
+		rowErr := NewRowErrors(rowData.row, rowData.line)
+		rowErr.Add(cellErrs...)
 		return rowErr
 	}
 	return nil
@@ -613,6 +620,7 @@ func (d *Decoder) parseColumnsMetaFromStructType(itemType reflect.Type, fileHead
 			headerText:  tag.name,
 			prefix:      tag.prefix,
 			optional:    tag.optional,
+			omitempty:   tag.omitEmpty,
 			targetField: field,
 		}
 
@@ -696,6 +704,7 @@ func (d *Decoder) parseInlineColumnFixedType(typ reflect.Type, parent *decodeCol
 			headerText:  headerKey,
 			parentKey:   parent.headerKey,
 			optional:    tag.optional,
+			omitempty:   tag.omitEmpty,
 			targetField: parent.targetField,
 			inlineColumnMeta: &inlineColumnMeta{
 				inlineType:  inlineColumnStructFixed,
@@ -912,6 +921,7 @@ type decodeColumnMeta struct {
 	prefix       string
 	optional     bool
 	unrecognized bool
+	omitempty    bool
 	trimSpace    bool
 	stopOnError  bool
 

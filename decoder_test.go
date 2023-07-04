@@ -260,7 +260,7 @@ func Test_Decode_withValidator(t *testing.T) {
 	type Item struct {
 		ColX bool `csv:",optional"`
 		ColY bool
-		Col1 int16   `csv:"col1"`
+		Col1 int16   `csv:"col1,omitempty"`
 		Col2 StrType `csv:"col2"`
 	}
 
@@ -283,7 +283,25 @@ func Test_Decode_withValidator(t *testing.T) {
 		assert.Equal(t, []Item{{Col1: 1, Col2: "abcxyz123"}, {Col1: 1000, Col2: "abc123"}}, v)
 	})
 
-	t.Run("#2: validate number range and str length range", func(t *testing.T) {
+	t.Run("#2: validate number range with omitempty", func(t *testing.T) {
+		data := gofn.MultilineString(
+			`col1,col2
+			,abcxyz123
+			1000,abc123`)
+
+		var v []Item
+		ret, err := NewDecoder(csv.NewReader(strings.NewReader(data)), func(cfg *DecodeConfig) {
+			cfg.ColumnConfigMap = DecodeColumnConfigMap{
+				"col1": {
+					ValidatorFuncs: []ValidatorFunc{ValidatorRange(int16(1), int16(1000))},
+				},
+			}
+		}).Decode(&v)
+		assert.Equal(t, 3, ret.TotalRow())
+		assert.ErrorIs(t, err, ErrValidationRange)
+	})
+
+	t.Run("#3: validate number range and str length range", func(t *testing.T) {
 		data := gofn.MultilineString(
 			`col1,col2
 			1,abcxyz123
