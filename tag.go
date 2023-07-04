@@ -7,15 +7,13 @@ import (
 )
 
 type tagDetail struct {
-	name        string
-	prefix      string
-	ignored     bool
-	empty       bool
-	omitEmpty   bool
-	trim        bool
-	stopOnError bool
-	optional    bool
-	inline      bool
+	name      string
+	prefix    string
+	ignored   bool
+	empty     bool
+	omitEmpty bool
+	optional  bool
+	inline    bool
 }
 
 func parseTag(tagName string, field reflect.StructField) (*tagDetail, error) {
@@ -47,10 +45,6 @@ func parseTag(tagName string, field reflect.StructField) (*tagDetail, error) {
 			tag.optional = true
 		case tagOpt == "omitempty":
 			tag.omitEmpty = true
-		case tagOpt == "trim":
-			tag.trim = true
-		case tagOpt == "stoponerror":
-			tag.stopOnError = true
 		case tagOpt == "inline":
 			tag.inline = true
 		case strings.HasPrefix(tagOpt, "prefix="):
