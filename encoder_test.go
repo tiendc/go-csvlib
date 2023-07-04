@@ -292,7 +292,7 @@ func Test_Encode_multipleCalls(t *testing.T) {
 		// Finish encoding, then try to encode more
 		e.Finish()
 		err = e.Encode(v)
-		assert.ErrorIs(t, err, ErrEncodeAlreadyFinished)
+		assert.ErrorIs(t, err, ErrFinished)
 	})
 
 	t.Run("#2: encode different types of data", func(t *testing.T) {
@@ -611,7 +611,7 @@ func Test_Encode_withLocalization(t *testing.T) {
 			cfg.LocalizeHeader = true
 			cfg.LocalizationFunc = localizeFail
 		}).Encode(v)
-		assert.ErrorIs(t, err, ErrLocalizationFailed)
+		assert.ErrorIs(t, err, ErrLocalization)
 		assert.ErrorIs(t, err, errKeyNotFound)
 	})
 
@@ -930,6 +930,6 @@ func Test_EncodeOne(t *testing.T) {
 		// Finish encoding, then try to encode more
 		e.Finish()
 		err = e.EncodeOne(Item{Col1: 0})
-		assert.ErrorIs(t, err, ErrEncodeAlreadyFinished)
+		assert.ErrorIs(t, err, ErrFinished)
 	})
 }

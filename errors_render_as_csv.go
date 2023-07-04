@@ -336,7 +336,7 @@ func (r *CSVRenderer) localizeKey(key string, params ParameterMap) (string, erro
 	}
 	msg, err := r.cfg.LocalizationFunc(key, params)
 	if err != nil {
-		err = multierror.Append(ErrLocalizationFailed, err)
+		err = multierror.Append(ErrLocalization, err)
 		r.transErr = multierror.Append(r.transErr, err)
 		return "", err
 	}

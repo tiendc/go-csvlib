@@ -227,7 +227,7 @@ func (d *Decoder) DecodeOne(v interface{}) error {
 
 	if len(d.rowsData) == 0 {
 		d.finished = true
-		return ErrDecodeNoAvailableData
+		return ErrFinished
 	}
 	rowData := d.rowsData[0]
 	d.rowsData = d.rowsData[1:]
@@ -251,10 +251,10 @@ func (d *Decoder) Finish() *DecodeResult {
 
 func (d *Decoder) canDecode() error {
 	if d.finished {
-		return &Errors{errs: []error{ErrDecodeAlreadyFinished}}
+		return &Errors{errs: []error{ErrFinished}}
 	}
 	if d.err.HasError() && d.shouldStop {
-		return &Errors{errs: []error{ErrDecodeAlreadyFailed}}
+		return &Errors{errs: []error{ErrAlreadyFailed}}
 	}
 	return nil
 }
@@ -938,7 +938,7 @@ func (m *decodeColumnMeta) localizeHeader(cfg *DecodeConfig) error {
 	if cfg.ParseLocalizedHeader {
 		headerText, err := cfg.LocalizationFunc(m.headerKey, nil)
 		if err != nil {
-			return multierror.Append(ErrLocalizationFailed, err)
+			return multierror.Append(ErrLocalization, err)
 		}
 		m.headerText = headerText
 	}

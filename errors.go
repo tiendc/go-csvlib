@@ -10,10 +10,13 @@ var (
 	ErrTypeUnsupported = errors.New("ErrTypeUnsupported")
 	ErrTypeUnmatched   = errors.New("ErrTypeUnmatched")
 	ErrValueNil        = errors.New("ErrValueNil")
+	ErrAlreadyFailed   = errors.New("ErrAlreadyFailed")
+	ErrFinished        = errors.New("ErrFinished")
+	ErrUnexpected      = errors.New("ErrUnexpected")
 
 	ErrTagOptionInvalid    = errors.New("ErrTagOptionInvalid")
 	ErrConfigOptionInvalid = errors.New("ErrConfigOptionInvalid")
-	ErrLocalizationFailed  = errors.New("ErrLocalizationFailed")
+	ErrLocalization        = errors.New("ErrLocalization")
 
 	ErrHeaderColumnInvalid                      = errors.New("ErrHeaderColumnInvalid")
 	ErrHeaderColumnUnrecognized                 = errors.New("ErrHeaderColumnUnrecognized")
@@ -24,7 +27,6 @@ var (
 	ErrHeaderDynamicNotAllowNoHeaderMode        = errors.New("ErrHeaderDynamicNotAllowNoHeaderMode")
 	ErrHeaderDynamicRequireColumnOrder          = errors.New("ErrHeaderDynamicRequireColumnOrder")
 	ErrHeaderDynamicNotAllowUnrecognizedColumns = errors.New("ErrHeaderDynamicNotAllowUnrecognizedColumns")
-	ErrHeaderDynamicNotAllowOptionalColumns     = errors.New("ErrHeaderDynamicNotAllowOptionalColumns")
 	ErrHeaderDynamicNotAllowLocalizedHeader     = errors.New("ErrHeaderDynamicNotAllowLocalizedHeader")
 
 	ErrValidationConversion = errors.New("ErrValidationConversion")
@@ -39,17 +41,11 @@ var (
 	ErrValidationStrPrefix  = fmt.Errorf("%w: StrPrefix", ErrValidation)
 	ErrValidationStrSuffix  = fmt.Errorf("%w: StrSuffix", ErrValidation)
 
-	ErrDecodeAlreadyFailed   = errors.New("ErrDecodeAlreadyFailed")
-	ErrDecodeAlreadyFinished = errors.New("ErrDecodeAlreadyFinished")
-	ErrDecodeNoAvailableData = errors.New("ErrDecodeNoAvailableData")
-	ErrDecodeValueType       = errors.New("ErrDecodeValueType")
-	ErrDecodeRowFieldCount   = errors.New("ErrDecodeRowFieldCount")
-	ErrDecodeQuoteInvalid    = errors.New("ErrDecodeQuoteInvalid")
+	ErrDecodeValueType     = errors.New("ErrDecodeValueType")
+	ErrDecodeRowFieldCount = errors.New("ErrDecodeRowFieldCount")
+	ErrDecodeQuoteInvalid  = errors.New("ErrDecodeQuoteInvalid")
 
-	ErrEncodeUnexpected      = errors.New("ErrEncodeUnexpected")
-	ErrEncodeAlreadyFailed   = errors.New("ErrEncodeAlreadyFailed")
-	ErrEncodeAlreadyFinished = errors.New("ErrEncodeAlreadyFinished")
-	ErrEncodeValueType       = errors.New("ErrEncodeValueType")
+	ErrEncodeValueType = errors.New("ErrEncodeValueType")
 )
 
 type Errors struct { // nolint: errname

@@ -353,7 +353,7 @@ func Test_Decode_multipleCalls(t *testing.T) {
 		var v2 []Item
 		ret, err = d.Decode(&v2)
 		assert.Nil(t, ret)
-		assert.ErrorIs(t, err, ErrDecodeAlreadyFinished)
+		assert.ErrorIs(t, err, ErrFinished)
 	})
 
 	t.Run("#2: 1st and 2nd call will fail", func(t *testing.T) {
@@ -372,7 +372,7 @@ func Test_Decode_multipleCalls(t *testing.T) {
 		var v2 []Item
 		ret, err = d.Decode(&v2)
 		assert.Nil(t, ret)
-		assert.ErrorIs(t, err, ErrDecodeAlreadyFailed)
+		assert.ErrorIs(t, err, ErrAlreadyFailed)
 	})
 
 	t.Run("#1: decode data by page", func(t *testing.T) {
@@ -400,7 +400,7 @@ func Test_Decode_multipleCalls(t *testing.T) {
 		// Third call
 		ret, err = d.Decode(&v)
 		assert.Nil(t, ret)
-		assert.ErrorIs(t, err, ErrDecodeAlreadyFinished)
+		assert.ErrorIs(t, err, ErrFinished)
 	})
 }
 
@@ -754,7 +754,7 @@ func Test_Decode_withLocalization(t *testing.T) {
 		assert.Nil(t, ret)
 		assert.Nil(t, v)
 		assert.Equal(t, 1, err.(*Errors).TotalError())
-		assert.ErrorIs(t, err, ErrLocalizationFailed)
+		assert.ErrorIs(t, err, ErrLocalization)
 		assert.ErrorIs(t, err, errKeyNotFound)
 	})
 
@@ -1165,7 +1165,7 @@ func Test_DecodeOne(t *testing.T) {
 		assert.Nil(t, err)
 		assert.Equal(t, Item{Col1: 100, Col2: 200}, v2)
 		err = d.DecodeOne(&v3)
-		assert.ErrorIs(t, err, ErrDecodeAlreadyFinished)
+		assert.ErrorIs(t, err, ErrFinished)
 	})
 
 	t.Run("#2: using nil ptr as input", func(t *testing.T) {
@@ -1215,7 +1215,7 @@ func Test_DecodeOne(t *testing.T) {
 		assert.Equal(t, Item{Col1: 1, Col2: 2.123}, v1)
 		_ = d.Finish()
 		err = d.DecodeOne(&v2)
-		assert.ErrorIs(t, err, ErrDecodeAlreadyFinished)
+		assert.ErrorIs(t, err, ErrFinished)
 	})
 
 	t.Run("#6: pass different types between calls", func(t *testing.T) {
@@ -1245,7 +1245,7 @@ func Test_DecodeOne(t *testing.T) {
 		var v Item
 		d := NewDecoder(csv.NewReader(strings.NewReader(data)))
 		err := d.DecodeOne(&v)
-		assert.ErrorIs(t, err, ErrDecodeNoAvailableData)
+		assert.ErrorIs(t, err, ErrFinished)
 	})
 
 	t.Run("#8: decode one until finishes with unmarshaler", func(t *testing.T) {
@@ -1263,7 +1263,7 @@ func Test_DecodeOne(t *testing.T) {
 		assert.Nil(t, err)
 		assert.Equal(t, Item{Col1: 100, Col2: 200, Col3: "BBB", Col4: gofn.New[StrLowerType]("bbb")}, v2)
 		err = d.DecodeOne(&v3)
-		assert.ErrorIs(t, err, ErrDecodeAlreadyFinished)
+		assert.ErrorIs(t, err, ErrFinished)
 	})
 }
 
