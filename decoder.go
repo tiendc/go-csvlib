@@ -148,9 +148,13 @@ func NewDecoder(r Reader, options ...DecodeOption) *Decoder {
 // Decode decode input data and store the result in the given variable
 // The input var must be a pointer to a slice, e.g. `*[]Student` (recommended) or `*[]*Student`
 func (d *Decoder) Decode(v interface{}) (*DecodeResult, error) {
-	if err := d.canDecode(); err != nil {
-		return nil, err
+	if d.finished {
+		return nil, ErrFinished
 	}
+	if d.shouldStop {
+		return nil, ErrAlreadyFailed
+	}
+
 	val := reflect.ValueOf(v)
 	if d.itemType == nil {
 		if err := d.prepareDecode(val); err != nil {
@@ -205,8 +209,11 @@ func (d *Decoder) Decode(v interface{}) (*DecodeResult, error) {
 }
 
 func (d *Decoder) DecodeOne(v interface{}) error {
-	if err := d.canDecode(); err != nil {
-		return err
+	if d.finished {
+		return ErrFinished
+	}
+	if d.shouldStop {
+		return ErrAlreadyFailed
 	}
 
 	rowVal := reflect.ValueOf(v)
@@ -247,16 +254,6 @@ func (d *Decoder) DecodeOne(v interface{}) error {
 func (d *Decoder) Finish() *DecodeResult {
 	d.finished = true
 	return d.result
-}
-
-func (d *Decoder) canDecode() error {
-	if d.finished {
-		return &Errors{errs: []error{ErrFinished}}
-	}
-	if d.err.HasError() && d.shouldStop {
-		return &Errors{errs: []error{ErrAlreadyFailed}}
-	}
-	return nil
 }
 
 func (d *Decoder) prepareDecode(v reflect.Value) error {

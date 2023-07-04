@@ -74,9 +74,13 @@ func NewEncoder(w Writer, options ...EncodeOption) *Encoder {
 // Encode encode input data stored in the given variable
 // The input var must be a slice, e.g. `[]Student` or `[]*Student`
 func (e *Encoder) Encode(v interface{}) error {
-	if err := e.canEncode(); err != nil {
-		return err
+	if e.finished {
+		return ErrFinished
 	}
+	if e.err != nil {
+		return ErrAlreadyFailed
+	}
+
 	val := reflect.ValueOf(v)
 	if e.itemType == nil {
 		if err := e.prepareEncode(val); err != nil {
@@ -114,9 +118,13 @@ func (e *Encoder) Encode(v interface{}) error {
 
 // EncodeOne encode single object into a single CSV row
 func (e *Encoder) EncodeOne(v interface{}) error {
-	if err := e.canEncode(); err != nil {
-		return err
+	if e.finished {
+		return ErrFinished
 	}
+	if e.err != nil {
+		return ErrAlreadyFailed
+	}
+
 	rowVal := reflect.ValueOf(v)
 	itemType := rowVal.Type()
 	if !isKindOrPtrOf(itemType, reflect.Struct) {
@@ -152,16 +160,6 @@ func (e *Encoder) flushWriter() {
 	if flusher, ok := e.w.(interface{ Flush() }); ok {
 		flusher.Flush()
 	}
-}
-
-func (e *Encoder) canEncode() error {
-	if e.finished {
-		return ErrFinished
-	}
-	if e.err != nil {
-		return ErrAlreadyFailed
-	}
-	return nil
 }
 
 func (e *Encoder) prepareEncode(v reflect.Value) error {
