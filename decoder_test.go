@@ -374,34 +374,6 @@ func Test_Decode_multipleCalls(t *testing.T) {
 		assert.Nil(t, ret)
 		assert.ErrorIs(t, err, ErrAlreadyFailed)
 	})
-
-	t.Run("#1: decode data by page", func(t *testing.T) {
-		data := gofn.MultilineString(
-			`col1,col2
-			1,11
-			2,22
-			3,33
-			4,44
-			5,55`)
-
-		v := make([]Item, 3)
-		d := NewDecoder(csv.NewReader(strings.NewReader(data)))
-		ret, err := d.Decode(&v)
-		assert.Nil(t, err)
-		assert.Equal(t, 6, ret.TotalRow())
-		assert.Equal(t, []Item{{Col1: 1, Col2: 11}, {Col1: 2, Col2: 22}, {Col1: 3, Col2: 33}}, v)
-
-		// Second call
-		ret, err = d.Decode(&v)
-		assert.Nil(t, err)
-		assert.Equal(t, 6, ret.TotalRow())
-		assert.Equal(t, []Item{{Col1: 4, Col2: 44}, {Col1: 5, Col2: 55}}, v)
-
-		// Third call
-		ret, err = d.Decode(&v)
-		assert.Nil(t, ret)
-		assert.ErrorIs(t, err, ErrFinished)
-	})
 }
 
 func Test_Decode_withFixedInlineColumn(t *testing.T) {

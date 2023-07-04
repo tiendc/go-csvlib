@@ -98,17 +98,12 @@ type DecodeOption func(cfg *DecodeConfig)
 
 type DecodeResult struct {
 	totalRow               int
-	decodedRow             int
 	unrecognizedColumns    []string
 	missingOptionalColumns []string
 }
 
 func (r *DecodeResult) TotalRow() int {
 	return r.totalRow
-}
-
-func (r *DecodeResult) DecodedRow() int {
-	return r.decodedRow
 }
 
 func (r *DecodeResult) UnrecognizedColumns() []string {
@@ -171,35 +166,33 @@ func (d *Decoder) Decode(v interface{}) (*DecodeResult, error) {
 		return nil, fmt.Errorf("%w: %v (expect %v)", ErrTypeUnmatched, itemType, d.itemType)
 	}
 
-	var rowsData []*rowData
-	inStorageSize := val.Elem().Len()
-	if inStorageSize > 0 {
-		inStorageSize = gofn.Min(inStorageSize, len(d.rowsData))
-		rowsData = d.rowsData[:inStorageSize]
-		d.rowsData = d.rowsData[inStorageSize:]
-	} else {
-		rowsData = d.rowsData
-		d.rowsData = d.rowsData[0:0]
-	}
-	outSlice := reflect.MakeSlice(typ, len(rowsData), len(rowsData))
+	outSlice := reflect.MakeSlice(typ, len(d.rowsData), len(d.rowsData))
 	itemKindIsPtr := itemType.Kind() == reflect.Pointer
+	row := 0
+	for !d.shouldStop && len(d.rowsData) > 0 {
+		// Reduce memory consumption by splitting the source data into chunks (10000 items each)
+		// After each chunk is processed, resize the slice to allow Go to free the memory when necessary
+		chunkSz := gofn.Min(10000, len(d.rowsData)) // nolint: gomnd
+		chunk := d.rowsData[0:chunkSz]
+		d.rowsData = d.rowsData[chunkSz:]
 
-	for row, rowData := range rowsData {
-		rowVal := outSlice.Index(row)
-		if itemKindIsPtr {
-			rowVal.Set(reflect.New(itemType.Elem()))
-			rowVal = rowVal.Elem()
-		}
-		if err = d.decodeRow(rowData, rowVal); err != nil {
-			d.err.Add(err)
-			if d.cfg.StopOnError || d.shouldStop {
-				d.shouldStop = true
-				break
+		for _, rowData := range chunk {
+			rowVal := outSlice.Index(row)
+			row++
+			if itemKindIsPtr {
+				rowVal.Set(reflect.New(itemType.Elem()))
+				rowVal = rowVal.Elem()
 			}
-		} else {
-			d.result.decodedRow++
+			if err = d.decodeRow(rowData, rowVal); err != nil {
+				d.err.Add(err)
+				if d.cfg.StopOnError || d.shouldStop {
+					d.shouldStop = true
+					break
+				}
+			}
 		}
 	}
+
 	if d.err.HasError() {
 		return d.result, d.err
 	}
@@ -244,8 +237,6 @@ func (d *Decoder) DecodeOne(v interface{}) error {
 		if d.cfg.StopOnError {
 			d.shouldStop = true
 		}
-	} else {
-		d.result.decodedRow++
 	}
 	d.finished = len(d.rowsData) == 0
 	return err
