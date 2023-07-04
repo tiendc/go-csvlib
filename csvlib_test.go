@@ -8,6 +8,52 @@ import (
 	"github.com/tiendc/gofn"
 )
 
+func Test_Unmarshal(t *testing.T) {
+	type Item struct {
+		ColX bool    `csv:",optional"`
+		ColY bool    `csv:"-"`
+		Col1 int     `csv:"col1"`
+		Col2 float32 `csv:"col2"`
+	}
+
+	t.Run("#1: success", func(t *testing.T) {
+		data := gofn.MultilineString(
+			`col1,col2
+			1,2.123
+			100,200`)
+
+		var v []Item
+		ret, err := Unmarshal([]byte(data), &v)
+		assert.Nil(t, err)
+		assert.Equal(t, 3, ret.TotalRow())
+		assert.Equal(t, []string{"ColX"}, ret.MissingOptionalColumns())
+		assert.Equal(t, []Item{{Col1: 1, Col2: 2.123}, {Col1: 100, Col2: 200}}, v)
+	})
+}
+
+func Test_Marshal(t *testing.T) {
+	type Item struct {
+		ColX bool `csv:",optional"`
+		ColY bool
+		Col1 int     `csv:"col1"`
+		Col2 float32 `csv:"col2"`
+	}
+
+	t.Run("#1: success", func(t *testing.T) {
+		v := []Item{
+			{Col1: 1, Col2: 2.123},
+			{Col1: 100, Col2: 200},
+		}
+		data, err := Marshal(v)
+		assert.Nil(t, err)
+		assert.Equal(t, gofn.MultilineString(
+			`ColX,col1,col2
+				false,1,2.123
+				false,100,200
+			`), string(data))
+	})
+}
+
 func Test_GetHeaderDetails(t *testing.T) {
 	t.Run("#1: success", func(t *testing.T) {
 		type Item struct {

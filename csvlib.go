@@ -1,6 +1,8 @@
 package csvlib
 
 import (
+	"bytes"
+	"encoding/csv"
 	"fmt"
 	"reflect"
 )
@@ -57,6 +59,27 @@ type ColumnDetail struct {
 	OmitEmpty bool
 	Inline    bool
 	DataType  reflect.Type
+}
+
+// Unmarshal convenient method to decode CVS data into a slice of structs
+func Unmarshal(data []byte, v any, options ...DecodeOption) (*DecodeResult, error) {
+	decoder := NewDecoder(csv.NewReader(bytes.NewReader(data)), options...)
+	return decoder.Decode(v)
+}
+
+// Marshal convenient method to encode a slice of structs into CSV format
+func Marshal(v any, options ...EncodeOption) ([]byte, error) {
+	var buf bytes.Buffer
+	w := csv.NewWriter(&buf)
+	encoder := NewEncoder(w, options...)
+	if err := encoder.Encode(v); err != nil {
+		return nil, err
+	}
+	w.Flush()
+	if err := w.Error(); err != nil {
+		return nil, err
+	}
+	return buf.Bytes(), nil
 }
 
 // GetHeaderDetails get CSV header details from the given struct type
