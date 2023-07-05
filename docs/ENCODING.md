@@ -16,6 +16,8 @@
 
 ### First example
 
+[Playground](https://go.dev/play/p/SVTP87loZ-g)
+
 ```go
     type Student struct {
         Name      string    `csv:"name"`
@@ -40,6 +42,8 @@
 ```
 
 ### No header mode
+
+[Playground](https://go.dev/play/p/qkfXClVUO5e)
 
 ```go
     type Student struct {
@@ -68,6 +72,8 @@
 ### Postprocessor
 
 - Postprocessor functions will be called after Go values are encoded into CSV string.
+
+[Playground](https://go.dev/play/p/MlppfYm-xey)
 
 ```go
     type Student struct {
@@ -100,6 +106,8 @@
 
 - To skip encoding a column, you can omit the `csv` tag from the struct field or use `csv:"-"`. You can also use an equivalent configuration option for the column.
 
+[Playground](https://go.dev/play/p/NHzpm9o-y6N)
+
 ```go
     type Student struct {
         Name    string `csv:"name"`
@@ -130,6 +138,8 @@
 ### Fixed inline columns
 
 - Fixed inline columns are represented by an inner struct. `prefix` can be set for inline columns.
+
+[Playground](https://go.dev/play/p/kenlqLQ9p75)
 
 ```go
     type Marks struct {
@@ -164,6 +174,8 @@
 
 - Dynamic inline columns are represented by an inner struct with variable number of columns. `prefix` can also be set for them.
 
+[Playground](https://go.dev/play/p/BaMNjFj5Kr0)
+
 ```go
     type Student struct {
         Name    string                   `csv:"name"`
@@ -193,11 +205,13 @@
 
 - Any user custom type can be decoded by implementing either `encoding.TextMarshaler` or `csvlib.CSVMarshaler` or both. `csvlib.CSVMarshaler` has higher priority.
 
+[Playground](https://go.dev/play/p/iSfxQSkUCax)
+
 ```go
 type BirthDate time.Time
 
 func (d BirthDate) MarshalCSV() ([]byte, error) {
-    return []byte(time.Time(d).Format("2006-02-01")), nil // RFC3339
+    return []byte(time.Time(d).Format("2006-01-02")), nil // RFC3339
 }
 ```
 ```go
@@ -226,6 +240,8 @@ func (d BirthDate) MarshalCSV() ([]byte, error) {
 ### Custom column delimiter
 
 - By default, the encoder uses comma as the delimiter, if you want to encode custom one, use `csv.Writer` from the built-in package `encoding/csv` as the input writer.
+
+[Playground](https://go.dev/play/p/WxOStP5cb6G)
 
 ```go
     type Student struct {
@@ -257,6 +273,8 @@ func (d BirthDate) MarshalCSV() ([]byte, error) {
 ```
 
 ### Encode one-by-one
+
+[Playground](https://go.dev/play/p/aQWk3qqlBVm)
 
 ```go
     type Student struct {
@@ -292,6 +310,8 @@ func (d BirthDate) MarshalCSV() ([]byte, error) {
 ### Header localization
 
 - This functionality allows to encode CSV data with header translated into a specific language.
+
+[Playground](https://go.dev/play/p/jH7joZPgWJO)
 
 ```go
 // Sample localization data (you can define them somewhere else such as in a json file)
