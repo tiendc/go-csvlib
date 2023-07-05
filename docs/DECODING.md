@@ -70,7 +70,7 @@ tom ,26,new york`)
         })
 
         cfg.ConfigureColumn("age", func(cfg *csvlib.DecodeColumnConfig) {
-            cfg.alidatorFuncs = []csvlib.ValidatorFunc{csvlib.ValidatorRange(20, 30)}
+            cfg.ValidatorFuncs = []csvlib.ValidatorFunc{csvlib.ValidatorRange(20, 30)}
         })
     })
     if err != nil {
