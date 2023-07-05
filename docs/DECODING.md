@@ -18,6 +18,8 @@
 
 ### First example
 
+[Playground](https://go.dev/play/p/tUw9SfaD8QK)
+
 ```go
     data := []byte(`
 name,birthdate,address
@@ -50,6 +52,8 @@ tom,1989-11-11T00:00:00Z,new york`)
 ### Preprocessor and Validator
 
 - Preprocessor functions will be called before cell values are decoded and validator functions will be called after that.
+
+[Playground](https://go.dev/play/p/Ndn2sj4030c)
 
 ```go
     data := []byte(`
@@ -95,6 +99,8 @@ tom ,26,new york`)
 
 - When set `StopOnError = false`, the decoding will continue to process the data even when errors occur. You can handle all errors of the process at once.
 
+[Playground](https://go.dev/play/p/mV1UX69mHWS)
+
 ```go
     data := []byte(`
 name,age,address
@@ -129,6 +135,8 @@ tom,26,new york`)
 
 - Optional column is a column which is defined in the struct tag but not exist in the input data
 - Unrecognized column is a column which exists in the input data but is not defined in the struct tag
+
+[Playground](https://go.dev/play/p/OA8Jh3Y4aaD)
 
 ```go
     data := []byte(`
@@ -165,6 +173,8 @@ tom,26,9`)
 
 - By default, the header order in the input data must match the order defined in the struct tag.
 
+[Playground](https://go.dev/play/p/3va5HYWacPO)
+
 ```go
     // `address` appears before `age`
     data := []byte(`
@@ -199,6 +209,8 @@ tom,new york,9`)
 ### Fixed inline columns
 
 - Fixed inline columns are represented by an inner struct. `prefix` can be set for inline columns.
+
+[Playground](https://go.dev/play/p/ouZDv4zjfSA)
 
 ```go
     data := []byte(`
@@ -245,6 +257,8 @@ tom,19,7,8,9`)
 
 - Dynamic inline columns are represented by an inner struct with variable number of columns. `prefix` can also be set for them.
 
+[Playground](https://go.dev/play/p/5SCRzMp6NZP)
+
 ```go
     data := []byte(`
 name,age,mark_math,mark_chemistry,mark_physics
@@ -281,6 +295,8 @@ tom,19,7,8,9`)
 ### Custom unmarshaler
 
 - Any user custom type can be decoded by implementing either `encoding.TextUnmarshaler` or `csvlib.CSVUnmarshaler` or both. `csvlib.CSVUnmarshaler` has higher priority.
+
+[Playground](https://go.dev/play/p/g_QmAN6di-9)
 
 ```go
 type BirthDate time.Time
@@ -329,6 +345,8 @@ tom,1989-11-11`)
 
 - By default, the decoder detects columns via comma delimiter, if you want to decode custom one, use `csv.Reader` from the built-in package `encoding/csv` as the input reader.
 
+[Playground](https://go.dev/play/p/HgxcyzeHho6)
+
 ```go
     data := []byte(
         "name\tage\taddress\n" +
@@ -360,6 +378,8 @@ tom,1989-11-11`)
 ```
 
 ### Decode one-by-one
+
+[Playground](https://go.dev/play/p/81jLLnGbENa)
 
 ```go
     data := []byte(`
@@ -400,6 +420,8 @@ tom,26,new york`)
 ### Header localization
 
 - This functionality allows to decode multiple input data with header translated into specific language
+
+[Playground](https://go.dev/play/p/Tf-unVfBnYH)
 
 ```go
 // Sample localization data (you can define them somewhere else such as in a json file)
@@ -477,6 +499,8 @@ tom,19,new york`)
 
 - Decoding errors can be rendered as a more human-readable content such as text or CSV.
 
+[Playground](https://go.dev/play/p/cTNGAUlP7s_T)
+
 ```go
     data := []byte(`
 name,age,address
@@ -496,7 +520,7 @@ jj,40,`)
         cfg.StopOnError = false
         cfg.DetectRowLine = true
         cfg.ConfigureColumn("name", func(cfg *csvlib.DecodeColumnConfig) {
-            cfg.ValidatorFuncs = []csvlib.ValidatorFunc{csvlib.ValidatorRange(1, 10)}
+            cfg.ValidatorFuncs = []csvlib.ValidatorFunc{csvlib.ValidatorStrLen[string](3, 10)}
             cfg.OnCellErrorFunc = func(e *csvlib.CellError) {
                 if errors.Is(e, csvlib.ErrValidationStrLen) {
                     e.SetLocalizationKey("Column {{.Column}} - '{{.Value}}': Name length must be from {{.MinLen}} to {{.MaxLen}}")
@@ -529,6 +553,7 @@ jj,40,`)
 
 - Render error as CSV content.
 
+[Playground](https://go.dev/play/p/7sJTKNSrOYl)
 
 ```go
     renderer, _ := csvlib.NewCSVRenderer(err.(*csvlib.Errors), func(cfg *csvlib.CSVRenderConfig) {
