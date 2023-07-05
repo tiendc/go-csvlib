@@ -1165,7 +1165,7 @@ func Test_DecodeOne(t *testing.T) {
 		err := d.DecodeOne(&v1)
 		assert.Nil(t, err)
 		assert.Equal(t, Item{Col1: 1, Col2: 2.123}, v1)
-		_ = d.Finish()
+		_, _ = d.Finish()
 		err = d.DecodeOne(&v2)
 		assert.ErrorIs(t, err, ErrFinished)
 	})

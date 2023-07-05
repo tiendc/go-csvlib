@@ -379,8 +379,9 @@ tom,26,new york`)
     for decoder.DecodeOne(&student) != csvlib.ErrFinished {
         fmt.Printf("%+v\n", student)
     }
-    
-    fmt.Printf("%+v\n", *decoder.Finish())
+
+    result, err := decoder.Finish() // err is *csvlib.Errors if it's not nil
+    fmt.Printf("%+v\n", *result)
     
     // Output:
     // {Name:jerry Age:20 Address:}
