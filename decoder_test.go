@@ -28,10 +28,8 @@ func Test_Decode_configOption(t *testing.T) {
 		var v []Item
 		ret, err := NewDecoder(csv.NewReader(strings.NewReader(data)), func(cfg *DecodeConfig) {
 			cfg.StopOnError = false
-			cfg.ColumnConfigMap = DecodeColumnConfigMap{
-				"col1": {},
-				"colX": {},
-			}
+			cfg.ConfigureColumn("col1", func(config *DecodeColumnConfig) {})
+			cfg.ConfigureColumn("colX", func(config *DecodeColumnConfig) {})
 		}).Decode(&v)
 		assert.Nil(t, ret)
 		assert.Nil(t, v)
@@ -214,11 +212,9 @@ func Test_Decode_withPreprocessor(t *testing.T) {
 
 		var v []Item
 		ret, err := NewDecoder(csv.NewReader(strings.NewReader(data)), func(cfg *DecodeConfig) {
-			cfg.ColumnConfigMap = DecodeColumnConfigMap{
-				"col2": {
-					TrimSpace: true,
-				},
-			}
+			cfg.ConfigureColumn("col2", func(cfg *DecodeColumnConfig) {
+				cfg.TrimSpace = true
+			})
 		}).Decode(&v)
 		assert.Nil(t, err)
 		assert.Equal(t, 3, ret.TotalRow())
@@ -233,11 +229,9 @@ func Test_Decode_withPreprocessor(t *testing.T) {
 
 		var v []Item
 		ret, err := NewDecoder(csv.NewReader(strings.NewReader(data)), func(cfg *DecodeConfig) {
-			cfg.ColumnConfigMap = DecodeColumnConfigMap{
-				"col2": {
-					PreprocessorFuncs: []ProcessorFunc{ProcessorTrim, ProcessorNumberUngroupComma},
-				},
-			}
+			cfg.ConfigureColumn("col2", func(cfg *DecodeColumnConfig) {
+				cfg.PreprocessorFuncs = []ProcessorFunc{ProcessorTrim, ProcessorNumberUngroupComma}
+			})
 		}).Decode(&v)
 		assert.Nil(t, err)
 		assert.Equal(t, 3, ret.TotalRow())
@@ -272,11 +266,9 @@ func Test_Decode_withValidator(t *testing.T) {
 
 		var v []Item
 		ret, err := NewDecoder(csv.NewReader(strings.NewReader(data)), func(cfg *DecodeConfig) {
-			cfg.ColumnConfigMap = DecodeColumnConfigMap{
-				"col1": {
-					ValidatorFuncs: []ValidatorFunc{ValidatorRange(int16(0), int16(1000))},
-				},
-			}
+			cfg.ConfigureColumn("col1", func(cfg *DecodeColumnConfig) {
+				cfg.ValidatorFuncs = []ValidatorFunc{ValidatorRange(int16(0), int16(1000))}
+			})
 		}).Decode(&v)
 		assert.Nil(t, err)
 		assert.Equal(t, 3, ret.TotalRow())
@@ -291,11 +283,9 @@ func Test_Decode_withValidator(t *testing.T) {
 
 		var v []Item
 		ret, err := NewDecoder(csv.NewReader(strings.NewReader(data)), func(cfg *DecodeConfig) {
-			cfg.ColumnConfigMap = DecodeColumnConfigMap{
-				"col1": {
-					ValidatorFuncs: []ValidatorFunc{ValidatorRange(int16(1), int16(1000))},
-				},
-			}
+			cfg.ConfigureColumn("col1", func(cfg *DecodeColumnConfig) {
+				cfg.ValidatorFuncs = []ValidatorFunc{ValidatorRange(int16(1), int16(1000))}
+			})
 		}).Decode(&v)
 		assert.Equal(t, 3, ret.TotalRow())
 		assert.ErrorIs(t, err, ErrValidationRange)
@@ -310,14 +300,12 @@ func Test_Decode_withValidator(t *testing.T) {
 		var v []Item
 		ret, err := NewDecoder(csv.NewReader(strings.NewReader(data)), func(cfg *DecodeConfig) {
 			cfg.StopOnError = false
-			cfg.ColumnConfigMap = DecodeColumnConfigMap{
-				"col1": {
-					ValidatorFuncs: []ValidatorFunc{ValidatorRange(int16(0), int16(999))},
-				},
-				"col2": {
-					ValidatorFuncs: []ValidatorFunc{ValidatorStrLen[StrType](5, 7)},
-				},
-			}
+			cfg.ConfigureColumn("col1", func(cfg *DecodeColumnConfig) {
+				cfg.ValidatorFuncs = []ValidatorFunc{ValidatorRange(int16(0), int16(999))}
+			})
+			cfg.ConfigureColumn("col2", func(cfg *DecodeColumnConfig) {
+				cfg.ValidatorFuncs = []ValidatorFunc{ValidatorStrLen[StrType](5, 7)}
+			})
 		}).Decode(&v)
 		assert.Nil(t, v)
 		assert.Equal(t, 3, ret.TotalRow())
@@ -505,16 +493,14 @@ func Test_Decode_withFixedInlineColumn(t *testing.T) {
 		ret, err := NewDecoder(csv.NewReader(strings.NewReader(data)), func(cfg *DecodeConfig) {
 			cfg.StopOnError = false
 			cfg.RequireColumnOrder = false
-			cfg.ColumnConfigMap = DecodeColumnConfigMap{
-				"sub_sub1": {
-					PreprocessorFuncs: []ProcessorFunc{ProcessorTrim},
-					ValidatorFuncs:    []ValidatorFunc{ValidatorRange(int16(0), 100)},
-				},
-				"sub1": {
-					PreprocessorFuncs: []ProcessorFunc{ProcessorTrim},
-					ValidatorFuncs:    []ValidatorFunc{ValidatorStrLen[string](0, 5)},
-				},
-			}
+			cfg.ConfigureColumn("sub_sub1", func(cfg *DecodeColumnConfig) {
+				cfg.PreprocessorFuncs = []ProcessorFunc{ProcessorTrim}
+				cfg.ValidatorFuncs = []ValidatorFunc{ValidatorRange(int16(0), 100)}
+			})
+			cfg.ConfigureColumn("sub1", func(cfg *DecodeColumnConfig) {
+				cfg.PreprocessorFuncs = []ProcessorFunc{ProcessorTrim}
+				cfg.ValidatorFuncs = []ValidatorFunc{ValidatorStrLen[string](0, 5)}
+			})
 		}).Decode(&v)
 		assert.Equal(t, 3, ret.TotalRow())
 		assert.Equal(t, 3, err.(*Errors).TotalError())
@@ -615,12 +601,10 @@ func Test_Decode_withDynamicInlineColumn(t *testing.T) {
 		var v []Item
 		ret, err := NewDecoder(csv.NewReader(strings.NewReader(data)), func(cfg *DecodeConfig) {
 			cfg.StopOnError = false
-			cfg.ColumnConfigMap = DecodeColumnConfigMap{
-				"sub1": {
-					PreprocessorFuncs: []ProcessorFunc{ProcessorTrim},
-					ValidatorFuncs:    []ValidatorFunc{ValidatorRange(0, 100)},
-				},
-			}
+			cfg.ConfigureColumn("sub1", func(cfg *DecodeColumnConfig) {
+				cfg.PreprocessorFuncs = []ProcessorFunc{ProcessorTrim}
+				cfg.ValidatorFuncs = []ValidatorFunc{ValidatorRange(0, 100)}
+			})
 		}).Decode(&v)
 		assert.Equal(t, 2, err.(*Errors).TotalError())
 		assert.ErrorIs(t, err, ErrValidationRange)
@@ -645,12 +629,10 @@ func Test_Decode_withDynamicInlineColumn(t *testing.T) {
 		var v []Item
 		ret, err := NewDecoder(csv.NewReader(strings.NewReader(data)), func(cfg *DecodeConfig) {
 			cfg.StopOnError = false
-			cfg.ColumnConfigMap = DecodeColumnConfigMap{
-				"sub_sub1": {
-					PreprocessorFuncs: []ProcessorFunc{ProcessorTrim},
-					ValidatorFuncs:    []ValidatorFunc{ValidatorRange(0, 100)},
-				},
-			}
+			cfg.ConfigureColumn("sub_sub1", func(cfg *DecodeColumnConfig) {
+				cfg.PreprocessorFuncs = []ProcessorFunc{ProcessorTrim}
+				cfg.ValidatorFuncs = []ValidatorFunc{ValidatorRange(0, 100)}
+			})
 		}).Decode(&v)
 		assert.Equal(t, 2, err.(*Errors).TotalError())
 		assert.ErrorIs(t, err, ErrValidationRange)
@@ -738,15 +720,13 @@ func Test_Decode_withLocalization(t *testing.T) {
 
 		var v []Item
 		_, err := NewDecoder(csv.NewReader(strings.NewReader(data)), func(cfg *DecodeConfig) {
-			cfg.ColumnConfigMap = DecodeColumnConfigMap{
-				"col1": {
-					OnCellErrorFunc: func(e *CellError) {
-						if errors.Is(e, ErrDecodeValueType) {
-							e.SetLocalizationKey("LOCALE_KEY_1")
-						}
-					},
-				},
-			}
+			cfg.ConfigureColumn("col1", func(cfg *DecodeColumnConfig) {
+				cfg.OnCellErrorFunc = func(e *CellError) {
+					if errors.Is(e, ErrDecodeValueType) {
+						e.SetLocalizationKey("LOCALE_KEY_1")
+					}
+				}
+			})
 		}).Decode(&v)
 		assert.Nil(t, v)
 		assert.Equal(t, 1, err.(*Errors).TotalError())

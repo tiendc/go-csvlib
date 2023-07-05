@@ -54,11 +54,30 @@ type DecodeConfig struct {
 	// LocalizationFunc localization function, required when ParseLocalizedHeader is true
 	LocalizationFunc LocalizationFunc
 
-	// ColumnConfigMap a map consists of configuration for specific columns (optional)
-	ColumnConfigMap DecodeColumnConfigMap
+	// columnConfigMap a map consists of configuration for specific columns
+	columnConfigMap map[string]*DecodeColumnConfig
 }
 
-type DecodeColumnConfigMap map[string]*DecodeColumnConfig
+func defaultDecodeConfig() *DecodeConfig {
+	return &DecodeConfig{
+		TagName:                        DefaultTagName,
+		StopOnError:                    true,
+		RequireColumnOrder:             true,
+		TreatIncorrectStructureAsError: true,
+	}
+}
+
+func (c *DecodeConfig) ConfigureColumn(name string, fn func(*DecodeColumnConfig)) {
+	if c.columnConfigMap == nil {
+		c.columnConfigMap = map[string]*DecodeColumnConfig{}
+	}
+	columnCfg, ok := c.columnConfigMap[name]
+	if !ok {
+		columnCfg = defaultDecodeColumnConfig()
+		c.columnConfigMap[name] = columnCfg
+	}
+	fn(columnCfg)
+}
 
 // DecodeColumnConfig configuration for a specific column
 type DecodeColumnConfig struct {
@@ -85,13 +104,8 @@ type DecodeColumnConfig struct {
 	OnCellErrorFunc OnCellErrorFunc
 }
 
-func defaultDecodeConfig() *DecodeConfig {
-	return &DecodeConfig{
-		TagName:                        DefaultTagName,
-		StopOnError:                    true,
-		RequireColumnOrder:             true,
-		TreatIncorrectStructureAsError: true,
-	}
+func defaultDecodeColumnConfig() *DecodeColumnConfig {
+	return &DecodeColumnConfig{}
 }
 
 type DecodeOption func(cfg *DecodeConfig)
@@ -559,7 +573,7 @@ func (d *Decoder) parseColumnsMeta(itemType reflect.Type) error {
 func (d *Decoder) validateColumnsMeta(colsMeta, colsMetaFromStruct []*decodeColumnMeta) error {
 	cfg := d.cfg
 	// Make sure all column options valid
-	for colKey := range cfg.ColumnConfigMap {
+	for colKey := range cfg.columnConfigMap {
 		if !gofn.ContainPred(colsMetaFromStruct, func(colMeta *decodeColumnMeta) bool {
 			return colMeta.headerKey == colKey || colMeta.parentKey == colKey
 		}) {
@@ -621,7 +635,7 @@ func (d *Decoder) parseColumnsMetaFromStructType(itemType reflect.Type, fileHead
 			continue
 		}
 
-		colMeta.copyConfig(cfg.ColumnConfigMap[colMeta.headerKey])
+		colMeta.copyConfig(cfg.columnConfigMap[colMeta.headerKey])
 		if err = colMeta.localizeHeader(cfg); err != nil {
 			return nil, err
 		}
@@ -701,9 +715,9 @@ func (d *Decoder) parseInlineColumnFixedType(typ reflect.Type, parent *decodeCol
 			},
 		}
 
-		columnCfg := cfg.ColumnConfigMap[colMeta.headerKey]
+		columnCfg := cfg.columnConfigMap[colMeta.headerKey]
 		if columnCfg == nil {
-			columnCfg = cfg.ColumnConfigMap[colMeta.parentKey]
+			columnCfg = cfg.columnConfigMap[colMeta.parentKey]
 		}
 		colMeta.copyConfig(columnCfg)
 		if err = colMeta.localizeHeader(cfg); err != nil {
@@ -748,9 +762,9 @@ func (d *Decoder) parseInlineColumnDynamicType(typ reflect.Type, parent *decodeC
 		dataType:    dataType,
 	}
 
-	columnCfg := cfg.ColumnConfigMap[colMeta.headerKey]
+	columnCfg := cfg.columnConfigMap[colMeta.headerKey]
 	if columnCfg == nil {
-		columnCfg = cfg.ColumnConfigMap[colMeta.parentKey]
+		columnCfg = cfg.columnConfigMap[colMeta.parentKey]
 	}
 	colMeta.copyConfig(columnCfg)
 

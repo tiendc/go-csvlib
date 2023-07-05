@@ -51,7 +51,6 @@ tom,1989-11-11T00:00:00Z,new york`)
 - Preprocessor functions will be called before cell values are decoded and validator functions will be called after that.
 
 ```go
-
     data := []byte(`
 name,age,address
 jerry ,20,
@@ -65,15 +64,14 @@ tom ,26,new york`)
 
     var students []Student
     result, err := csvlib.Unmarshal(data, &students, func(cfg *csvlib.DecodeConfig) {
-        cfg.ColumnConfigMap = csvlib.DecodeColumnConfigMap{
-            "name": {
-                TrimSpace:         true, // you can use csvlib.ProcessorTrim as an alternative
-                PreprocessorFuncs: []csvlib.ProcessorFunc{csvlib.ProcessorUpper},
-            },
-            "age": {
-                ValidatorFuncs: []csvlib.ValidatorFunc{csvlib.ValidatorRange(20, 30)},
-            },
-        }
+        cfg.ConfigureColumn("name", func(cfg *csvlib.DecodeColumnConfig) {
+            cfg.TrimSpace = true // you can use csvlib.ProcessorTrim as an alternative
+            cfg.PreprocessorFuncs = []csvlib.ProcessorFunc{csvlib.ProcessorUpper}
+        })
+
+        cfg.ConfigureColumn("age", func(cfg *csvlib.DecodeColumnConfig) {
+            cfg.alidatorFuncs = []csvlib.ValidatorFunc{csvlib.ValidatorRange(20, 30)}
+        })
     })
     if err != nil {
         fmt.Println("error:", err)
@@ -111,11 +109,9 @@ tom,26,new york`)
     var students []Student
     result, err := csvlib.Unmarshal(data, &students, func(cfg *csvlib.DecodeConfig) {
         cfg.StopOnError = false
-        cfg.ColumnConfigMap = csvlib.DecodeColumnConfigMap{
-            "age": {
-                ValidatorFuncs: []csvlib.ValidatorFunc{csvlib.ValidatorRange(10, 20)},
-            },
-        }
+        cfg.ConfigureColumn("age", func(cfg *csvlib.DecodeColumnConfig) {
+            cfg.ValidatorFuncs = []csvlib.ValidatorFunc{csvlib.ValidatorRange(10, 20)}
+        })
     })
     if err != nil {
         csvErr := err.(*csvlib.Errors)
@@ -223,14 +219,12 @@ tom,19,7,8,9`)
 
     var students []Student
     result, err := csvlib.Unmarshal(data, &students, func(cfg *csvlib.DecodeConfig) {
-        cfg.ColumnConfigMap = csvlib.DecodeColumnConfigMap{
-            "mark_math": { // `math` field will be decoded with these configurations
-                ValidatorFuncs: []csvlib.ValidatorFunc{csvlib.ValidatorRange(0, 10)},
-            },
-            "marks": { // `chemistry` and `physics` fields will be decoded with these configurations
-                ValidatorFuncs: []csvlib.ValidatorFunc{csvlib.ValidatorRange(1, 10)},
-            },
-        }
+        cfg.ConfigureColumn("mark_math", func(cfg *csvlib.DecodeColumnConfig) { // `math` field will be decoded with these configurations
+            cfg.ValidatorFuncs = []csvlib.ValidatorFunc{csvlib.ValidatorRange(0, 10)}
+        })
+        cfg.ConfigureColumn("marks", func(cfg *csvlib.DecodeColumnConfig) { // `chemistry` and `physics` fields will be decoded with these configurations
+            cfg.ValidatorFuncs = []csvlib.ValidatorFunc{csvlib.ValidatorRange(1, 10)}
+        })
     })
     if err != nil {
         fmt.Println("error:", err)
@@ -265,11 +259,9 @@ tom,19,7,8,9`)
 
     var students []Student
     result, err := csvlib.Unmarshal(data, &students, func(cfg *csvlib.DecodeConfig) {
-        cfg.ColumnConfigMap = csvlib.DecodeColumnConfigMap{
-            "marks": { // all inline columns are validated by this
-                ValidatorFuncs: []csvlib.ValidatorFunc{csvlib.ValidatorRange(1, 10)},
-            },
-        }
+        cfg.ConfigureColumn("marks", func(cfg *csvlib.DecodeColumnConfig) { // all inline columns are validated by this
+            cfg.ValidatorFuncs = []csvlib.ValidatorFunc{csvlib.ValidatorRange(1, 10)}
+        })
     })
     if err != nil {
         fmt.Println("error:", err)
@@ -464,26 +456,24 @@ jj,40,`)
     _, err := csvlib.Unmarshal(data, &students, func(cfg *csvlib.DecodeConfig) {
         cfg.StopOnError = false
         cfg.DetectRowLine = true
-        cfg.ColumnConfigMap = csvlib.DecodeColumnConfigMap{
-            "name": {
-                ValidatorFuncs: []csvlib.ValidatorFunc{csvlib.ValidatorStrLen[string](3, 10)},
-                OnCellErrorFunc: func(e *csvlib.CellError) {
-                    if errors.Is(e, csvlib.ErrValidationStrLen) {
-                        e.SetLocalizationKey("Column {{.Column}} - '{{.Value}}': Name length must be from {{.MinLen}} to {{.MaxLen}}")
-                        e.WithParam("MinLen", 3).WithParam("MaxLen", 10)
-                    }
-                },
-            },
-            "age": {
-                ValidatorFuncs: []csvlib.ValidatorFunc{csvlib.ValidatorRange(10, 30)},
-                OnCellErrorFunc: func(e *csvlib.CellError) {
-                    if errors.Is(e, csvlib.ErrValidationRange) {
-                        e.SetLocalizationKey("Column {{.Column}} - '{{.Value}}': Age must be from {{.MinVal}} to {{.MaxVal}}")
-                        e.WithParam("MinVal", 10).WithParam("MaxVal", 30)
-                    }
-                },
-            },
-        }
+        cfg.ConfigureColumn("name", func(cfg *csvlib.DecodeColumnConfig) {
+            cfg.ValidatorFuncs = []csvlib.ValidatorFunc{csvlib.ValidatorRange(1, 10)}
+            cfg.OnCellErrorFunc = func(e *csvlib.CellError) {
+                if errors.Is(e, csvlib.ErrValidationStrLen) {
+                    e.SetLocalizationKey("Column {{.Column}} - '{{.Value}}': Name length must be from {{.MinLen}} to {{.MaxLen}}")
+                    e.WithParam("MinLen", 3).WithParam("MaxLen", 10)
+                }
+            }
+        })
+        cfg.ConfigureColumn("age", func(cfg *csvlib.DecodeColumnConfig) {
+            cfg.ValidatorFuncs = []csvlib.ValidatorFunc{csvlib.ValidatorRange(10, 30)}
+            cfg.OnCellErrorFunc = func(e *csvlib.CellError) {
+                if errors.Is(e, csvlib.ErrValidationRange) {
+                    e.SetLocalizationKey("Column {{.Column}} - '{{.Value}}': Age must be from {{.MinVal}} to {{.MaxVal}}")
+                    e.WithParam("MinVal", 10).WithParam("MaxVal", 30)
+                }
+            }
+        })
     })
     if err != nil {
         renderer, _ := csvlib.NewRenderer(err.(*csvlib.Errors))
