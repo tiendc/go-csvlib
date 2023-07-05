@@ -256,9 +256,9 @@ func (d *Decoder) DecodeOne(v interface{}) error {
 	return err
 }
 
-func (d *Decoder) Finish() *DecodeResult {
+func (d *Decoder) Finish() (*DecodeResult, error) {
 	d.finished = true
-	return d.result
+	return d.result, d.err
 }
 
 func (d *Decoder) prepareDecode(v reflect.Value) error {
