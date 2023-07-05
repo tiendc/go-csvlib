@@ -1,8 +1,10 @@
 [![Go Version][gover-img]][gover] [![GoDoc][doc-img]][doc] [![Build Status][ci-img]][ci] [![Coverage Status][cov-img]][cov] [![GoReport][rpt-img]][rpt]
 
-# High level CSV lib for Go 1.18+
+# High level CSV library for Go 1.18+
 
 This is a library for decoding and encoding CSV at high level as it provides convenient methods and many configuration options to process the data the way you expect.
+
+This library is inspired by the project https://github.com/jszwec/csvutil.
 
 ## Functionalities
 
