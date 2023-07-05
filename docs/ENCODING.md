@@ -9,6 +9,7 @@
 - [Dynamic inline columns](#dynamic-inline-columns)
 - [Custom marshaler](#custom-marshaler)
 - [Custom column delimiter](#custom-column-delimiter)
+- [Encode one-by-one](#encode-one-by-one)
 - [Header localization](#header-localization)
 
 ## Content
@@ -253,6 +254,39 @@ func (d BirthDate) MarshalCSV() ([]byte, error) {
     // name	age	address
     // jerry	20	tokyo
     // tom	19	new york
+```
+
+### Encode one-by-one
+
+```go
+    type Student struct {
+        Name    string `csv:"name"`
+        Age     int    `csv:"age"`
+        Address string `csv:"address"`
+    }
+
+    students := []Student{
+        {Name: "jerry", Age: 20, Address: "tokyo"},
+        {Name: "tom", Age: 19, Address: "new york"},
+    }
+    var buf bytes.Buffer
+    writer := csv.NewWriter(&buf)
+    encoder := csvlib.NewEncoder(writer)
+
+    for _, student := range students {
+        if err := encoder.EncodeOne(student); err != nil {
+            fmt.Println("error:", err)
+            break
+        }
+    }
+    encoder.Finish()
+    writer.Flush()
+    fmt.Println(buf.String())
+
+    // Output:
+    // name,age,address
+    // jerry,20,tokyo
+    // tom,19,new york
 ```
 
 ### Header localization

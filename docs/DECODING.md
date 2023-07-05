@@ -10,6 +10,7 @@
 - [Dynamic inline columns](#dynamic-inline-columns)
 - [Custom unmarshaler](#custom-unmarshaler)
 - [Custom column delimiter](#custom-column-delimiter)
+- [Decode one-by-one](#decode-one-by-one)
 - [Header localization](#header-localization)
 - [Render error as human-readable format](#render-error-as-human-readable-format)
 
@@ -356,6 +357,35 @@ tom,1989-11-11`)
     // Output:
     // {Name:jerry Age:10 Address:tokyo}
     // {Name:tom Age:9 Address:new york}
+```
+
+### Decode one-by-one
+
+```go
+    data := []byte(`
+name,age,address
+jerry,20,
+tom,26,new york`)
+
+    type Student struct {
+        Name    string `csv:"name"`
+        Age     int    `csv:"age"`
+        Address string `csv:"address"`
+    }
+
+    reader := csv.NewReader(bytes.NewReader(data))
+    decoder := csvlib.NewDecoder(reader)
+    var student Student
+    for decoder.DecodeOne(&student) != csvlib.ErrFinished {
+        fmt.Printf("%+v\n", student)
+    }
+    
+    fmt.Printf("%+v\n", *decoder.Finish())
+    
+    // Output:
+    // {Name:jerry Age:20 Address:}
+    // {Name:tom Age:26 Address:new york}
+    // {totalRow:3 unrecognizedColumns:[] missingOptionalColumns:[]}
 ```
 
 ### Header localization
