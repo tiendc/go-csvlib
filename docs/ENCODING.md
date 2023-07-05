@@ -80,11 +80,9 @@
         {Name: " tom ", Age: 19, Address: "new york"},
     }
     data, err := csvlib.Marshal(students, func(cfg *csvlib.EncodeConfig) {
-        cfg.ColumnConfigMap = csvlib.EncodeColumnConfigMap{
-            "name": {
-                PostprocessorFuncs: []csvlib.ProcessorFunc{csvlib.ProcessorTrim, csvlib.ProcessorUpper},
-            },
-        }
+        cfg.ConfigureColumn("name", func(cfg *csvlib.EncodeColumnConfig) {
+            cfg.PostprocessorFuncs = []csvlib.ProcessorFunc{csvlib.ProcessorTrim, csvlib.ProcessorUpper}
+        })
     })
     if err != nil {
         fmt.Println("error:", err)
@@ -113,11 +111,9 @@
         {Name: "tom", Age: 19, Address: "new york"},
     }
     data, err := csvlib.Marshal(students, func(cfg *csvlib.EncodeConfig) {
-        cfg.ColumnConfigMap = csvlib.EncodeColumnConfigMap{
-            "address": {
-                Skip: true,
-            },
-        }
+        cfg.ConfigureColumn("address", func(cfg *csvlib.EncodeColumnConfig) {
+            cfg.Skip = true
+        })
     })
     if err != nil {
         fmt.Println("error:", err)
@@ -245,7 +241,7 @@ func (d BirthDate) MarshalCSV() ([]byte, error) {
     var buf bytes.Buffer
     writer := csv.NewWriter(&buf)
     writer.Comma = '\t'
-	
+
     err := csvlib.NewEncoder(writer).Encode(students)
     if err != nil {
         fmt.Println("error:", err)

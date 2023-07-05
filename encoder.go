@@ -22,11 +22,27 @@ type EncodeConfig struct {
 	// LocalizationFunc localization function, required when LocalizeHeader is true
 	LocalizationFunc LocalizationFunc
 
-	// ColumnConfigMap a map consists of configuration for specific columns (optional)
-	ColumnConfigMap EncodeColumnConfigMap
+	// columnConfigMap a map consists of configuration for specific columns (optional)
+	columnConfigMap map[string]*EncodeColumnConfig
 }
 
-type EncodeColumnConfigMap map[string]*EncodeColumnConfig
+func defaultEncodeConfig() *EncodeConfig {
+	return &EncodeConfig{
+		TagName: DefaultTagName,
+	}
+}
+
+func (c *EncodeConfig) ConfigureColumn(name string, fn func(*EncodeColumnConfig)) {
+	if c.columnConfigMap == nil {
+		c.columnConfigMap = map[string]*EncodeColumnConfig{}
+	}
+	columnCfg, ok := c.columnConfigMap[name]
+	if !ok {
+		columnCfg = defaultEncodeColumnConfig()
+		c.columnConfigMap[name] = columnCfg
+	}
+	fn(columnCfg)
+}
 
 type EncodeColumnConfig struct {
 	// Skip whether skip encoding the column or not (this is equivalent to use `csv:"-"` in struct tag)
@@ -40,10 +56,8 @@ type EncodeColumnConfig struct {
 	PostprocessorFuncs []ProcessorFunc
 }
 
-func defaultEncodeConfig() *EncodeConfig {
-	return &EncodeConfig{
-		TagName: DefaultTagName,
-	}
+func defaultEncodeColumnConfig() *EncodeColumnConfig {
+	return &EncodeColumnConfig{}
 }
 
 type EncodeOption func(cfg *EncodeConfig)
@@ -291,7 +305,7 @@ func (e *Encoder) parseColumnsMeta(itemType reflect.Type, val reflect.Value) err
 func (e *Encoder) validateColumnsMeta(colsMeta []*encodeColumnMeta) error {
 	cfg := e.cfg
 	// Make sure all column options valid
-	for colKey := range cfg.ColumnConfigMap {
+	for colKey := range cfg.columnConfigMap {
 		if !gofn.ContainPred(colsMeta, func(colMeta *encodeColumnMeta) bool {
 			return colMeta.headerKey == colKey || colMeta.parentKey == colKey
 		}) {
@@ -348,7 +362,7 @@ func (e *Encoder) parseColumnsMetaFromStructType(itemType reflect.Type, val refl
 			continue
 		}
 
-		colMeta.copyConfig(cfg.ColumnConfigMap[colMeta.headerKey])
+		colMeta.copyConfig(cfg.columnConfigMap[colMeta.headerKey])
 		if err = colMeta.localizeHeader(cfg); err != nil {
 			return nil, err
 		}
@@ -412,9 +426,9 @@ func (e *Encoder) parseInlineColumnFixedType(typ reflect.Type, parent *encodeCol
 			},
 		}
 
-		columnCfg := cfg.ColumnConfigMap[headerKey]
+		columnCfg := cfg.columnConfigMap[headerKey]
 		if columnCfg == nil {
-			columnCfg = cfg.ColumnConfigMap[colMeta.parentKey]
+			columnCfg = cfg.columnConfigMap[colMeta.parentKey]
 		}
 		colMeta.copyConfig(columnCfg)
 		if err = colMeta.localizeHeader(cfg); err != nil {
@@ -470,9 +484,9 @@ func (e *Encoder) parseInlineColumnDynamicType(inlineStruct reflect.Value, paren
 		colMeta.parentKey = parent.headerKey
 		colMeta.inlineColumnMeta = inlineColumnMeta
 
-		columnCfg := cfg.ColumnConfigMap[colMeta.headerKey]
+		columnCfg := cfg.columnConfigMap[colMeta.headerKey]
 		if columnCfg == nil {
-			columnCfg = cfg.ColumnConfigMap[colMeta.parentKey]
+			columnCfg = cfg.columnConfigMap[colMeta.parentKey]
 		}
 		colMeta.copyConfig(columnCfg)
 

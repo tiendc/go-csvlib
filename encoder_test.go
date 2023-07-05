@@ -21,11 +21,9 @@ func Test_Encode_configOption(t *testing.T) {
 		v := []Item{}
 		buf := bytes.NewBuffer([]byte{})
 		err := NewEncoder(csv.NewWriter(buf), func(cfg *EncodeConfig) {
-			cfg.ColumnConfigMap = EncodeColumnConfigMap{
-				"ColX": {},
-				"col1": {},
-				"colX": {},
-			}
+			cfg.ConfigureColumn("ColX", func(cfg *EncodeColumnConfig) {})
+			cfg.ConfigureColumn("col1", func(cfg *EncodeColumnConfig) {})
+			cfg.ConfigureColumn("colX", func(cfg *EncodeColumnConfig) {})
 		}).Encode(v)
 		assert.ErrorIs(t, err, ErrConfigOptionInvalid)
 	})
@@ -113,11 +111,9 @@ func Test_Encode_withPostprocessor(t *testing.T) {
 		}
 		buf := bytes.NewBuffer([]byte{})
 		err := NewEncoder(csv.NewWriter(buf), func(cfg *EncodeConfig) {
-			cfg.ColumnConfigMap = EncodeColumnConfigMap{
-				"col2": {
-					PostprocessorFuncs: []ProcessorFunc{ProcessorTrim, ProcessorUpper},
-				},
-			}
+			cfg.ConfigureColumn("col2", func(cfg *EncodeColumnConfig) {
+				cfg.PostprocessorFuncs = []ProcessorFunc{ProcessorTrim, ProcessorUpper}
+			})
 		}).Encode(v)
 		assert.Nil(t, err)
 		assert.Equal(t, gofn.MultilineString(
@@ -140,14 +136,12 @@ func Test_Encode_withPostprocessor(t *testing.T) {
 		}
 		buf := bytes.NewBuffer([]byte{})
 		err := NewEncoder(csv.NewWriter(buf), func(cfg *EncodeConfig) {
-			cfg.ColumnConfigMap = EncodeColumnConfigMap{
-				"col1": {
-					PostprocessorFuncs: []ProcessorFunc{ProcessorNumberGroupComma},
-				},
-				"col2": {
-					PostprocessorFuncs: []ProcessorFunc{ProcessorNumberGroupComma},
-				},
-			}
+			cfg.ConfigureColumn("col1", func(cfg *EncodeColumnConfig) {
+				cfg.PostprocessorFuncs = []ProcessorFunc{ProcessorNumberGroupComma}
+			})
+			cfg.ConfigureColumn("col2", func(cfg *EncodeColumnConfig) {
+				cfg.PostprocessorFuncs = []ProcessorFunc{ProcessorNumberGroupComma}
+			})
 		}).Encode(v)
 		assert.Nil(t, err)
 		assert.Equal(t, gofn.MultilineString(
@@ -173,11 +167,9 @@ func Test_Encode_withSpecialChars(t *testing.T) {
 		}
 		buf := bytes.NewBuffer([]byte{})
 		err := NewEncoder(csv.NewWriter(buf), func(cfg *EncodeConfig) {
-			cfg.ColumnConfigMap = EncodeColumnConfigMap{
-				"col2": {
-					PostprocessorFuncs: []ProcessorFunc{ProcessorTrim, ProcessorUpper},
-				},
-			}
+			cfg.ConfigureColumn("col2", func(cfg *EncodeColumnConfig) {
+				cfg.PostprocessorFuncs = []ProcessorFunc{ProcessorTrim, ProcessorUpper}
+			})
 		}).Encode(v)
 		assert.Nil(t, err)
 		assert.Equal(t, gofn.MultilineString(
@@ -437,14 +429,12 @@ func Test_Encode_withFixedInlineColumn(t *testing.T) {
 		}
 		buf := bytes.NewBuffer([]byte{})
 		err := NewEncoder(csv.NewWriter(buf), func(cfg *EncodeConfig) {
-			cfg.ColumnConfigMap = EncodeColumnConfigMap{
-				"sub_sub1": {
-					PostprocessorFuncs: []ProcessorFunc{ProcessorNumberGroupComma},
-				},
-				"sub1": {
-					PostprocessorFuncs: []ProcessorFunc{ProcessorUpper},
-				},
-			}
+			cfg.ConfigureColumn("sub_sub1", func(cfg *EncodeColumnConfig) {
+				cfg.PostprocessorFuncs = []ProcessorFunc{ProcessorNumberGroupComma}
+			})
+			cfg.ConfigureColumn("sub1", func(cfg *EncodeColumnConfig) {
+				cfg.PostprocessorFuncs = []ProcessorFunc{ProcessorUpper}
+			})
 		}).Encode(v)
 		assert.Nil(t, err)
 		assert.Equal(t, gofn.MultilineString(
@@ -540,11 +530,9 @@ func Test_Encode_withDynamicInlineColumn(t *testing.T) {
 		err := NewEncoder(csv.NewWriter(buf), func(cfg *EncodeConfig) {
 			cfg.LocalizeHeader = true
 			cfg.LocalizationFunc = localizeViVn
-			cfg.ColumnConfigMap = EncodeColumnConfigMap{
-				"sub_col1": {
-					PostprocessorFuncs: []ProcessorFunc{ProcessorNumberGroupComma},
-				},
-			}
+			cfg.ConfigureColumn("sub_col1", func(cfg *EncodeColumnConfig) {
+				cfg.PostprocessorFuncs = []ProcessorFunc{ProcessorNumberGroupComma}
+			})
 		}).Encode(v)
 		assert.Nil(t, err)
 		assert.Equal(t, gofn.MultilineString(
