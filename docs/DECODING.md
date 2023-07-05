@@ -375,8 +375,16 @@ tom,26,new york`)
 
     reader := csv.NewReader(bytes.NewReader(data))
     decoder := csvlib.NewDecoder(reader)
-    var student Student
-    for decoder.DecodeOne(&student) != csvlib.ErrFinished {
+    for {
+        var student Student
+        err := decoder.DecodeOne(&student)
+        if err != nil {
+            if errors.Is(err, csvlib.ErrFinished) {
+                break
+            }
+            fmt.Println("error:", err)
+            break
+        }
         fmt.Printf("%+v\n", student)
     }
 
