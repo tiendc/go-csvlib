@@ -9,6 +9,27 @@ import (
 	"github.com/tiendc/gofn"
 )
 
+func doEncode(v any, options ...EncodeOption) ([]byte, error) {
+	var buf bytes.Buffer
+	w := csv.NewWriter(&buf)
+	encoder := NewEncoder(w, options...)
+	if err := encoder.Encode(v); err != nil {
+		return nil, err
+	}
+	w.Flush()
+	if err := w.Error(); err != nil {
+		return nil, err
+	}
+	return buf.Bytes(), nil
+}
+
+func makeEncoder(options ...EncodeOption) (*Encoder, *csv.Writer, *bytes.Buffer) {
+	var buf bytes.Buffer
+	w := csv.NewWriter(&buf)
+	e := NewEncoder(w, options...)
+	return e, w, &buf
+}
+
 func Test_Encode_configOption(t *testing.T) {
 	type Item struct {
 		ColX bool `csv:",optional"`
@@ -19,39 +40,37 @@ func Test_Encode_configOption(t *testing.T) {
 
 	t.Run("#1: column option not found", func(t *testing.T) {
 		v := []Item{}
-		buf := bytes.NewBuffer([]byte{})
-		err := NewEncoder(csv.NewWriter(buf), func(cfg *EncodeConfig) {
+		_, err := doEncode(v, func(cfg *EncodeConfig) {
 			cfg.ConfigureColumn("ColX", func(cfg *EncodeColumnConfig) {})
 			cfg.ConfigureColumn("col1", func(cfg *EncodeColumnConfig) {})
 			cfg.ConfigureColumn("colX", func(cfg *EncodeColumnConfig) {})
-		}).Encode(v)
+		})
 		assert.ErrorIs(t, err, ErrConfigOptionInvalid)
 	})
 
 	t.Run("#2: localize header without localization func", func(t *testing.T) {
 		v := []Item{}
-		buf := bytes.NewBuffer([]byte{})
-		err := NewEncoder(csv.NewWriter(buf), func(cfg *EncodeConfig) {
+		_, err := doEncode(v, func(cfg *EncodeConfig) {
 			cfg.LocalizeHeader = true
-		}).Encode(v)
+		})
 		assert.ErrorIs(t, err, ErrConfigOptionInvalid)
 	})
 
 	t.Run("#3: invalid input var", func(t *testing.T) {
 		var v []Item
-		err := NewEncoder(nil).Encode(v)
+		_, err := doEncode(v)
 		assert.ErrorIs(t, err, ErrValueNil)
 	})
 
 	t.Run("#4: invalid input var", func(t *testing.T) {
 		v := []string{}
-		err := NewEncoder(nil).Encode(&v)
+		_, err := doEncode(&v)
 		assert.ErrorIs(t, err, ErrTypeInvalid)
 	})
 
 	t.Run("#5: invalid input var", func(t *testing.T) {
 		var v Item
-		err := NewEncoder(nil).Encode(&v)
+		_, err := doEncode(&v)
 		assert.ErrorIs(t, err, ErrTypeInvalid)
 	})
 }
@@ -69,14 +88,13 @@ func Test_Encode_withHeader(t *testing.T) {
 			{Col1: 1, Col2: 2.123},
 			{Col1: 100, Col2: 200},
 		}
-		buf := bytes.NewBuffer([]byte{})
-		err := NewEncoder(csv.NewWriter(buf)).Encode(v)
+		data, err := doEncode(v)
 		assert.Nil(t, err)
 		assert.Equal(t, gofn.MultilineString(
 			`ColX,col1,col2
 				false,1,2.123
 				false,100,200
-			`), buf.String())
+			`), string(data))
 	})
 
 	t.Run("#2: no header mode", func(t *testing.T) {
@@ -84,15 +102,14 @@ func Test_Encode_withHeader(t *testing.T) {
 			{Col1: 1, Col2: 2.123},
 			{Col1: 100, Col2: 200},
 		}
-		buf := bytes.NewBuffer([]byte{})
-		err := NewEncoder(csv.NewWriter(buf), func(cfg *EncodeConfig) {
+		data, err := doEncode(v, func(cfg *EncodeConfig) {
 			cfg.NoHeaderMode = true
-		}).Encode(v)
+		})
 		assert.Nil(t, err)
 		assert.Equal(t, gofn.MultilineString(
 			`false,1,2.123
 				false,100,200
-			`), buf.String())
+			`), string(data))
 	})
 }
 
@@ -109,18 +126,17 @@ func Test_Encode_withPostprocessor(t *testing.T) {
 			{Col1: 1, Col2: "\tabcXYZ "},
 			{Col1: 100, Col2: " xYz123 "},
 		}
-		buf := bytes.NewBuffer([]byte{})
-		err := NewEncoder(csv.NewWriter(buf), func(cfg *EncodeConfig) {
+		data, err := doEncode(v, func(cfg *EncodeConfig) {
 			cfg.ConfigureColumn("col2", func(cfg *EncodeColumnConfig) {
 				cfg.PostprocessorFuncs = []ProcessorFunc{ProcessorTrim, ProcessorUpper}
 			})
-		}).Encode(v)
+		})
 		assert.Nil(t, err)
 		assert.Equal(t, gofn.MultilineString(
 			`ColX,col1,col2
 				,1,ABCXYZ
 				,100,XYZ123
-			`), buf.String())
+			`), string(data))
 	})
 
 	t.Run("#2: add comma to numbers after encoding", func(t *testing.T) {
@@ -134,21 +150,20 @@ func Test_Encode_withPostprocessor(t *testing.T) {
 			{Col1: 12345, Col2: 1234.1234567},
 			{Col1: 1234567, Col2: 1.1234},
 		}
-		buf := bytes.NewBuffer([]byte{})
-		err := NewEncoder(csv.NewWriter(buf), func(cfg *EncodeConfig) {
+		data, err := doEncode(v, func(cfg *EncodeConfig) {
 			cfg.ConfigureColumn("col1", func(cfg *EncodeColumnConfig) {
 				cfg.PostprocessorFuncs = []ProcessorFunc{ProcessorNumberGroupComma}
 			})
 			cfg.ConfigureColumn("col2", func(cfg *EncodeColumnConfig) {
 				cfg.PostprocessorFuncs = []ProcessorFunc{ProcessorNumberGroupComma}
 			})
-		}).Encode(v)
+		})
 		assert.Nil(t, err)
 		assert.Equal(t, gofn.MultilineString(
 			`ColX,col1,col2
 				,"12,345","1,234.1234567"
 				,"1,234,567",1.1234
-			`), buf.String())
+			`), string(data))
 	})
 }
 
@@ -165,12 +180,11 @@ func Test_Encode_withSpecialChars(t *testing.T) {
 			{Col1: 1, Col2: " a\tbc\nXYZ "},
 			{Col1: 100, Col2: " xYz\n123 "},
 		}
-		buf := bytes.NewBuffer([]byte{})
-		err := NewEncoder(csv.NewWriter(buf), func(cfg *EncodeConfig) {
+		data, err := doEncode(v, func(cfg *EncodeConfig) {
 			cfg.ConfigureColumn("col2", func(cfg *EncodeColumnConfig) {
 				cfg.PostprocessorFuncs = []ProcessorFunc{ProcessorTrim, ProcessorUpper}
 			})
-		}).Encode(v)
+		})
 		assert.Nil(t, err)
 		assert.Equal(t, gofn.MultilineString(
 			`ColX,col1,col2
@@ -178,7 +192,7 @@ func Test_Encode_withSpecialChars(t *testing.T) {
 					XYZ"
 				,100,"XYZ
 					123"
-			`), buf.String())
+			`), string(data))
 	})
 
 	t.Run("#2: values have bare double-quote and single quote", func(t *testing.T) {
@@ -186,14 +200,13 @@ func Test_Encode_withSpecialChars(t *testing.T) {
 			{Col1: 1, Col2: "abc\"XYZ"},
 			{Col1: 100, Col2: "xYz'123"},
 		}
-		buf := bytes.NewBuffer([]byte{})
-		err := NewEncoder(csv.NewWriter(buf)).Encode(v)
+		data, err := doEncode(v)
 		assert.Nil(t, err)
 		assert.Equal(t, gofn.MultilineString(
 			`ColX,col1,col2
 				,1,"abc""XYZ"
 				,100,xYz'123
-			`), buf.String())
+			`), string(data))
 	})
 
 	t.Run("#3: values have valid double-quote", func(t *testing.T) {
@@ -201,14 +214,13 @@ func Test_Encode_withSpecialChars(t *testing.T) {
 			{Col1: 1, Col2: "\"abcXYZ\""},
 			{Col1: 100, Col2: "xYz'123"},
 		}
-		buf := bytes.NewBuffer([]byte{})
-		err := NewEncoder(csv.NewWriter(buf)).Encode(v)
+		data, err := doEncode(v)
 		assert.Nil(t, err)
 		assert.Equal(t, gofn.MultilineString(
 			`ColX,col1,col2
 				,1,"""abcXYZ"""
 				,100,xYz'123
-			`), buf.String())
+			`), string(data))
 	})
 }
 
@@ -227,15 +239,14 @@ func Test_Encode_withOmitEmpty(t *testing.T) {
 			{Col3: gofn.New(0)},
 			{Col1: 123},
 		}
-		buf := bytes.NewBuffer([]byte{})
-		err := NewEncoder(csv.NewWriter(buf)).Encode(v)
+		data, err := doEncode(v)
 		assert.Nil(t, err)
 		assert.Equal(t, gofn.MultilineString(
 			`ColX,col1,col2,col3
 				,,,
 				,,,
 				,123,,
-			`), buf.String())
+			`), string(data))
 	})
 }
 
@@ -256,9 +267,9 @@ func Test_Encode_multipleCalls(t *testing.T) {
 			{Col1: 1, Col2: 1.12345},
 			{Col1: 2, Col2: 6.543210},
 		}
-		buf := bytes.NewBuffer([]byte{})
-		e := NewEncoder(csv.NewWriter(buf))
+		e, w, buf := makeEncoder()
 		err := e.Encode(v)
+		w.Flush()
 		assert.Nil(t, err)
 		assert.Equal(t, gofn.MultilineString(
 			`col1,col2
@@ -272,6 +283,7 @@ func Test_Encode_multipleCalls(t *testing.T) {
 			{Col1: 4, Col2: 6.543},
 		}
 		err = e.Encode(v)
+		w.Flush()
 		assert.Nil(t, err)
 		assert.Equal(t, gofn.MultilineString(
 			`col1,col2
@@ -282,7 +294,7 @@ func Test_Encode_multipleCalls(t *testing.T) {
 			`), buf.String())
 
 		// Finish encoding, then try to encode more
-		e.Finish()
+		_ = e.Finish()
 		err = e.Encode(v)
 		assert.ErrorIs(t, err, ErrFinished)
 	})
@@ -292,9 +304,9 @@ func Test_Encode_multipleCalls(t *testing.T) {
 			{Col1: 1, Col2: 1.12345},
 			{Col1: 2, Col2: 6.543210},
 		}
-		buf := bytes.NewBuffer([]byte{})
-		e := NewEncoder(csv.NewWriter(buf))
+		e, w, buf := makeEncoder()
 		err := e.Encode(v)
+		w.Flush()
 		assert.Nil(t, err)
 		assert.Equal(t, gofn.MultilineString(
 			`col1,col2
@@ -339,14 +351,13 @@ func Test_Encode_withFixedInlineColumn(t *testing.T) {
 			{Col1: 1, Sub1: Sub{Col1: 111}, Col2: "abcxyz123"},
 			{Col1: 1000, Sub1: Sub{Col1: 222}, Col2: "abc123"},
 		}
-		buf := bytes.NewBuffer([]byte{})
-		err := NewEncoder(csv.NewWriter(buf)).Encode(v)
+		data, err := doEncode(v)
 		assert.Nil(t, err)
 		assert.Equal(t, gofn.MultilineString(
 			`ColX,col1,ColZ,sub1,sub2,col2
 				,1,false,111,,abcxyz123
 				,1000,false,222,,abc123
-			`), buf.String())
+			`), string(data))
 	})
 
 	t.Run("#2: success with pointer type", func(t *testing.T) {
@@ -354,14 +365,13 @@ func Test_Encode_withFixedInlineColumn(t *testing.T) {
 			{Col1: 1, Sub1: &Sub{Col1: 111}, Col2: "abcxyz123"},
 			{Col1: 1000, Sub1: &Sub{Col1: 222}, Col2: "abc123"},
 		}
-		buf := bytes.NewBuffer([]byte{})
-		err := NewEncoder(csv.NewWriter(buf)).Encode(v)
+		data, err := doEncode(v)
 		assert.Nil(t, err)
 		assert.Equal(t, gofn.MultilineString(
 			`ColX,col1,ColZ,sub1,sub2,col2
 				,1,false,111,,abcxyz123
 				,1000,false,222,,abc123
-			`), buf.String())
+			`), string(data))
 	})
 
 	t.Run("#3: with no header mode", func(t *testing.T) {
@@ -369,15 +379,14 @@ func Test_Encode_withFixedInlineColumn(t *testing.T) {
 			{Col1: 1, Sub1: Sub{Col1: 111}, Col2: "abcxyz123"},
 			{Col1: 1000, Sub1: Sub{Col1: 222}, Col2: "abc123"},
 		}
-		buf := bytes.NewBuffer([]byte{})
-		err := NewEncoder(csv.NewWriter(buf), func(cfg *EncodeConfig) {
+		data, err := doEncode(v, func(cfg *EncodeConfig) {
 			cfg.NoHeaderMode = true
-		}).Encode(v)
+		})
 		assert.Nil(t, err)
 		assert.Equal(t, gofn.MultilineString(
 			`,1,false,111,,abcxyz123
 				,1000,false,222,,abc123
-			`), buf.String())
+			`), string(data))
 	})
 
 	t.Run("#4: with column prefix", func(t *testing.T) {
@@ -392,14 +401,13 @@ func Test_Encode_withFixedInlineColumn(t *testing.T) {
 			{Col1: 1, Sub1: &Sub{Col1: 111}, Col2: "abcxyz123"},
 			{Col1: 1000, Sub1: &Sub{Col1: 222}, Col2: "abc123"},
 		}
-		buf := bytes.NewBuffer([]byte{})
-		err := NewEncoder(csv.NewWriter(buf)).Encode(v)
+		data, err := doEncode(v)
 		assert.Nil(t, err)
 		assert.Equal(t, gofn.MultilineString(
 			`ColX,col1,sub_ColZ,sub_sub1,sub_sub2,col2
 				,1,false,111,,abcxyz123
 				,1000,false,222,,abc123
-			`), buf.String())
+			`), string(data))
 	})
 
 	t.Run("#5: invalid inline column", func(t *testing.T) {
@@ -411,8 +419,7 @@ func Test_Encode_withFixedInlineColumn(t *testing.T) {
 		}
 
 		v := []Item{}
-		buf := bytes.NewBuffer([]byte{})
-		err := NewEncoder(csv.NewWriter(buf)).Encode(v)
+		_, err := doEncode(v)
 		assert.ErrorIs(t, err, ErrHeaderDynamicTypeInvalid)
 	})
 
@@ -427,21 +434,20 @@ func Test_Encode_withFixedInlineColumn(t *testing.T) {
 			{Col1: 1, Sub1: Sub{Col1: 12345, Col2: "abC"}, Col2: "abcxyz123"},
 			{Col1: 1000, Sub1: Sub{Col1: 4321, Col2: "xYz123"}, Col2: "abc123"},
 		}
-		buf := bytes.NewBuffer([]byte{})
-		err := NewEncoder(csv.NewWriter(buf), func(cfg *EncodeConfig) {
+		data, err := doEncode(v, func(cfg *EncodeConfig) {
 			cfg.ConfigureColumn("sub_sub1", func(cfg *EncodeColumnConfig) {
 				cfg.PostprocessorFuncs = []ProcessorFunc{ProcessorNumberGroupComma}
 			})
 			cfg.ConfigureColumn("sub1", func(cfg *EncodeColumnConfig) {
 				cfg.PostprocessorFuncs = []ProcessorFunc{ProcessorUpper}
 			})
-		}).Encode(v)
+		})
 		assert.Nil(t, err)
 		assert.Equal(t, gofn.MultilineString(
 			`col1,sub_ColZ,sub_sub1,sub_sub2,col2
 				1,FALSE,"12,345",ABC,abcxyz123
 				1000,FALSE,"4,321",XYZ123,abc123
-			`), buf.String())
+			`), string(data))
 	})
 }
 
@@ -469,14 +475,13 @@ func Test_Encode_withDynamicInlineColumn(t *testing.T) {
 			{Col1: 1, Sub1: InlineColumn[int]{Header: header, Values: []int{111, 11}}, Col2: gofn.New("abcxyz123")},
 			{Col1: 1000, Sub1: InlineColumn[int]{Header: header, Values: []int{222, 22}}, Col2: gofn.New("abc123")},
 		}
-		buf := bytes.NewBuffer([]byte{})
-		err := NewEncoder(csv.NewWriter(buf)).Encode(v)
+		data, err := doEncode(v)
 		assert.Nil(t, err)
 		assert.Equal(t, gofn.MultilineString(
 			`ColX,col1,sub1,sub2,col2,ColZ
 				false,1,111,11,abcxyz123,false
 				false,1000,222,22,abc123,false
-			`), buf.String())
+			`), string(data))
 	})
 
 	t.Run("#2: success with using pointer", func(t *testing.T) {
@@ -485,14 +490,13 @@ func Test_Encode_withDynamicInlineColumn(t *testing.T) {
 			{Col1: 1, Sub1: &InlineColumn[int]{Header: header, Values: []int{111, 11}}, Col2: gofn.New("abcxyz123")},
 			{Col1: 1000, Sub1: &InlineColumn[int]{Header: header, Values: []int{222, 22}}, Col2: gofn.New("abc123")},
 		}
-		buf := bytes.NewBuffer([]byte{})
-		err := NewEncoder(csv.NewWriter(buf)).Encode(v)
+		data, err := doEncode(v)
 		assert.Nil(t, err)
 		assert.Equal(t, gofn.MultilineString(
 			`ColX,col1,sub1,sub2,col2,ColZ
 				false,1,111,11,abcxyz123,false
 				false,1000,222,22,abc123,false
-			`), buf.String())
+			`), string(data))
 	})
 
 	t.Run("#3: no header mode", func(t *testing.T) {
@@ -501,15 +505,14 @@ func Test_Encode_withDynamicInlineColumn(t *testing.T) {
 			{Col1: 1, Sub1: InlineColumn[int]{Header: header, Values: []int{111, 11}}, Col2: gofn.New("abcxyz123")},
 			{Col1: 1000, Sub1: InlineColumn[int]{Header: header, Values: []int{222, 22}}, Col2: gofn.New("abc123")},
 		}
-		buf := bytes.NewBuffer([]byte{})
-		err := NewEncoder(csv.NewWriter(buf), func(cfg *EncodeConfig) {
+		data, err := doEncode(v, func(cfg *EncodeConfig) {
 			cfg.NoHeaderMode = true
-		}).Encode(v)
+		})
 		assert.Nil(t, err)
 		assert.Equal(t, gofn.MultilineString(
 			`false,1,111,11,abcxyz123,false
 				false,1000,222,22,abc123,false
-			`), buf.String())
+			`), string(data))
 	})
 
 	t.Run("#4: with column prefix", func(t *testing.T) {
@@ -526,20 +529,19 @@ func Test_Encode_withDynamicInlineColumn(t *testing.T) {
 			{Col1: gofn.New(1), Sub1: InlineColumn[int]{Header: header, Values: []int{1234, 11}}, Col2: "abcxyz123"},
 			{Col1: gofn.New(1000), Sub1: InlineColumn[int]{Header: header, Values: []int{12345, 22}}, Col2: "abc123"},
 		}
-		buf := bytes.NewBuffer([]byte{})
-		err := NewEncoder(csv.NewWriter(buf), func(cfg *EncodeConfig) {
+		data, err := doEncode(v, func(cfg *EncodeConfig) {
 			cfg.LocalizeHeader = true
 			cfg.LocalizationFunc = localizeViVn
 			cfg.ConfigureColumn("sub_col1", func(cfg *EncodeColumnConfig) {
 				cfg.PostprocessorFuncs = []ProcessorFunc{ProcessorNumberGroupComma}
 			})
-		}).Encode(v)
+		})
 		assert.Nil(t, err)
 		assert.Equal(t, gofn.MultilineString(
 			`Cột-X,cột-1,cột-phụ-1,cột-phụ-2,cột-2
 				false,1,"1,234",11,abcxyz123
 				false,1000,"12,345",22,abc123
-			`), buf.String())
+			`), string(data))
 	})
 
 	t.Run("#5: invalid dynamic inline type", func(t *testing.T) {
@@ -557,8 +559,7 @@ func Test_Encode_withDynamicInlineColumn(t *testing.T) {
 			{Col1: 1, Sub1: InlineColumn2[int]{Header: header}, Col2: "aBc123"},
 			{Col1: 2, Sub1: InlineColumn2[int]{Header: header}, Col2: "xyzZ"},
 		}
-		buf := bytes.NewBuffer([]byte{})
-		err := NewEncoder(csv.NewWriter(buf)).Encode(v)
+		_, err := doEncode(v)
 		assert.ErrorIs(t, err, ErrHeaderDynamicTypeInvalid)
 	})
 
@@ -578,8 +579,7 @@ func Test_Encode_withDynamicInlineColumn(t *testing.T) {
 			{Col1: 1, Sub1: InlineColumn2[int]{Header: header}, Col2: "aBc123"},
 			{Col1: 2, Sub1: InlineColumn2[int]{Header: header}, Col2: "xyzZ"},
 		}
-		buf := bytes.NewBuffer([]byte{})
-		err := NewEncoder(csv.NewWriter(buf)).Encode(v)
+		_, err := doEncode(v)
 		assert.ErrorIs(t, err, ErrHeaderDynamicTypeInvalid)
 	})
 }
@@ -594,41 +594,38 @@ func Test_Encode_withLocalization(t *testing.T) {
 
 	t.Run("#1: localization fails", func(t *testing.T) {
 		v := []Item{}
-		buf := bytes.NewBuffer([]byte{})
-		err := NewEncoder(csv.NewWriter(buf), func(cfg *EncodeConfig) {
+		_, err := doEncode(v, func(cfg *EncodeConfig) {
 			cfg.LocalizeHeader = true
 			cfg.LocalizationFunc = localizeFail
-		}).Encode(v)
+		})
 		assert.ErrorIs(t, err, ErrLocalization)
 		assert.ErrorIs(t, err, errKeyNotFound)
 	})
 
 	t.Run("#2: no header mode, empty data", func(t *testing.T) {
 		v := []Item{}
-		buf := bytes.NewBuffer([]byte{})
-		err := NewEncoder(csv.NewWriter(buf), func(cfg *EncodeConfig) {
+		data, err := doEncode(v, func(cfg *EncodeConfig) {
 			cfg.NoHeaderMode = true
 			cfg.LocalizeHeader = true
 			cfg.LocalizationFunc = localizeEnUs
-		}).Encode(v)
+		})
 		assert.Nil(t, err)
-		assert.Equal(t, "", buf.String())
+		assert.Equal(t, "", string(data))
 	})
 
 	t.Run("#3: no header mode, have data", func(t *testing.T) {
 		v := []Item{
 			{Col1: 111},
 		}
-		buf := bytes.NewBuffer([]byte{})
-		err := NewEncoder(csv.NewWriter(buf), func(cfg *EncodeConfig) {
+		data, err := doEncode(v, func(cfg *EncodeConfig) {
 			cfg.NoHeaderMode = true
 			cfg.LocalizeHeader = true
 			cfg.LocalizationFunc = localizeEnUs
-		}).Encode(v)
+		})
 		assert.Nil(t, err)
 		assert.Equal(t, gofn.MultilineString(
 			`false,111,
-			`), buf.String())
+			`), string(data))
 	})
 }
 
@@ -641,8 +638,7 @@ func Test_Encode_withCustomMarshaler(t *testing.T) {
 		}
 
 		v := []Item{}
-		buf := bytes.NewBuffer([]byte{})
-		err := NewEncoder(csv.NewWriter(buf)).Encode(v)
+		_, err := doEncode(v)
 		assert.ErrorIs(t, err, ErrTypeUnsupported)
 	})
 
@@ -659,14 +655,13 @@ func Test_Encode_withCustomMarshaler(t *testing.T) {
 			{Col1: 1, Col2: "aBcXyZ123", Col3: "aA"},
 			{Col1: 1000, Col2: "aBc123", Col3: "bB"},
 		}
-		buf := bytes.NewBuffer([]byte{})
-		err := NewEncoder(csv.NewWriter(buf)).Encode(v)
+		data, err := doEncode(v)
 		assert.Nil(t, err)
 		assert.Equal(t, gofn.MultilineString(
 			`ColX,col1,col2,col3
 				false,1,ABCXYZ123,aa
 				false,1000,ABC123,bb
-			`), buf.String())
+			`), string(data))
 	})
 
 	t.Run("#3: type implements MarshalText/MarshalCSV", func(t *testing.T) {
@@ -682,14 +677,13 @@ func Test_Encode_withCustomMarshaler(t *testing.T) {
 			{Col1: 1, Col2: gofn.New[StrUpperType]("aBcXyZ123"), Col3: gofn.New[StrLowerType]("aA")},
 			{Col1: 1000, Col2: gofn.New[StrUpperType]("aBc123"), Col3: gofn.New[StrLowerType]("bB")},
 		}
-		buf := bytes.NewBuffer([]byte{})
-		err := NewEncoder(csv.NewWriter(buf)).Encode(v)
+		data, err := doEncode(v)
 		assert.Nil(t, err)
 		assert.Equal(t, gofn.MultilineString(
 			`ColX,col1,col2,col3
 				false,1,ABCXYZ123,aa
 				false,1000,ABC123,bb
-			`), buf.String())
+			`), string(data))
 	})
 }
 
@@ -703,23 +697,21 @@ func Test_Encode_specialCases(t *testing.T) {
 
 	t.Run("#1: no input data", func(t *testing.T) {
 		v := []Item{}
-		buf := bytes.NewBuffer([]byte{})
-		err := NewEncoder(csv.NewWriter(buf)).Encode(v)
+		data, err := doEncode(v)
 		assert.Nil(t, err)
 		assert.Equal(t, 0, len(v))
 		assert.Equal(t, gofn.MultilineString(
 			`ColX,col1,col2
-			`), buf.String())
+			`), string(data))
 	})
 
 	t.Run("#2: no input data and no header mode", func(t *testing.T) {
 		v := []Item{}
-		buf := bytes.NewBuffer([]byte{})
-		err := NewEncoder(csv.NewWriter(buf), func(cfg *EncodeConfig) {
+		data, err := doEncode(v, func(cfg *EncodeConfig) {
 			cfg.NoHeaderMode = true
-		}).Encode(v)
+		})
 		assert.Nil(t, err)
-		assert.Equal(t, "", buf.String())
+		assert.Equal(t, "", string(data))
 	})
 
 	t.Run("#3: duplicated column from struct", func(t *testing.T) {
@@ -731,8 +723,7 @@ func Test_Encode_specialCases(t *testing.T) {
 			Col3 int     `csv:"col1"`
 		}
 		v := []Item2{}
-		buf := bytes.NewBuffer([]byte{})
-		err := NewEncoder(csv.NewWriter(buf)).Encode(v)
+		_, err := doEncode(v)
 		assert.ErrorIs(t, err, ErrHeaderColumnDuplicated)
 	})
 
@@ -744,8 +735,7 @@ func Test_Encode_specialCases(t *testing.T) {
 			Col2 float32 `csv:" col2"`
 		}
 		v := []Item{}
-		buf := bytes.NewBuffer([]byte{})
-		err := NewEncoder(csv.NewWriter(buf)).Encode(v)
+		_, err := doEncode(v)
 		assert.ErrorIs(t, err, ErrHeaderColumnInvalid)
 	})
 
@@ -755,14 +745,13 @@ func Test_Encode_specialCases(t *testing.T) {
 			nil,
 			{Col1: 100, Col2: 200},
 		}
-		buf := bytes.NewBuffer([]byte{})
-		err := NewEncoder(csv.NewWriter(buf)).Encode(v)
+		data, err := doEncode(v)
 		assert.Nil(t, err)
 		assert.Equal(t, gofn.MultilineString(
 			`ColX,col1,col2
 				false,1,2.123
 				false,100,200
-			`), buf.String())
+			`), string(data))
 	})
 }
 
@@ -779,8 +768,7 @@ func Test_Encode_specialTypes(t *testing.T) {
 			{Col1: 3, Col2: true},
 			{Col1: 4, Col2: nil},
 		}
-		buf := bytes.NewBuffer([]byte{})
-		err := NewEncoder(csv.NewWriter(buf)).Encode(v)
+		data, err := doEncode(v)
 		assert.Nil(t, err)
 		assert.Equal(t, gofn.MultilineString(
 			`col1,col2
@@ -788,7 +776,7 @@ func Test_Encode_specialTypes(t *testing.T) {
 				2,200
 				3,true
 				4,
-			`), buf.String())
+			`), string(data))
 	})
 
 	t.Run("#2: ptr interface{} type", func(t *testing.T) {
@@ -803,15 +791,14 @@ func Test_Encode_specialTypes(t *testing.T) {
 			{Col1: 100, Col2: gofn.New[interface{}]("200")},
 			{Col1: 100, Col2: gofn.New[interface{}](true)},
 		}
-		buf := bytes.NewBuffer([]byte{})
-		err := NewEncoder(csv.NewWriter(buf)).Encode(v)
+		data, err := doEncode(v)
 		assert.Nil(t, err)
 		assert.Equal(t, gofn.MultilineString(
 			`col1,col2
 				1,2.123
 				100,200
 				100,true
-			`), buf.String())
+			`), string(data))
 	})
 
 	t.Run("#3: all base types", func(t *testing.T) {
@@ -855,15 +842,12 @@ func Test_Encode_specialTypes(t *testing.T) {
 				uint64(1), gofn.New(uint64(1)), float32(1), gofn.New(float32(1)), float64(1), gofn.New(float64(1)),
 				false, gofn.New(false), "abc", gofn.New("123")},
 		}
-
-		buf := bytes.NewBuffer([]byte{})
-		e := NewEncoder(csv.NewWriter(buf))
-		err := e.Encode(v)
+		data, err := doEncode(v)
 		assert.Nil(t, err)
 		assert.Equal(t, gofn.MultilineString(
 			`c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,c13,c14,c15,c16,c17,c18,c19,c20,c21,c22,c23,c24,c25,c26,c27,c28
 			-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,false,false,abc,123
-			`), buf.String())
+			`), string(data))
 	})
 }
 
@@ -880,10 +864,9 @@ func Test_EncodeOne(t *testing.T) {
 	}
 
 	t.Run("#1: encode one multiple times", func(t *testing.T) {
-		buf := bytes.NewBuffer([]byte{})
-		e := NewEncoder(csv.NewWriter(buf))
+		e, w, buf := makeEncoder()
 		err := e.EncodeOne(Item{Col1: 1, Col2: gofn.New[float32](1.12345)})
-		e.flushWriter()
+		w.Flush()
 		assert.Nil(t, err)
 		assert.Equal(t, gofn.MultilineString(
 			`col1,col2
@@ -892,7 +875,7 @@ func Test_EncodeOne(t *testing.T) {
 
 		// Second call
 		err = e.EncodeOne(Item{Col1: 2, Col2: gofn.New[float32](0.0)})
-		e.flushWriter()
+		w.Flush()
 		assert.Nil(t, err)
 		assert.Equal(t, gofn.MultilineString(
 			`col1,col2
@@ -902,7 +885,7 @@ func Test_EncodeOne(t *testing.T) {
 
 		// Third call
 		err = e.EncodeOne(Item{Col1: 0, Col2: gofn.New[float32](2.22)})
-		e.flushWriter()
+		w.Flush()
 		assert.Nil(t, err)
 		assert.Equal(t, gofn.MultilineString(
 			`col1,col2
@@ -916,7 +899,7 @@ func Test_EncodeOne(t *testing.T) {
 		assert.ErrorIs(t, err, ErrTypeUnmatched)
 
 		// Finish encoding, then try to encode more
-		e.Finish()
+		_ = e.Finish()
 		err = e.EncodeOne(Item{Col1: 0})
 		assert.ErrorIs(t, err, ErrFinished)
 	})

@@ -101,18 +101,18 @@ func (e *Encoder) Encode(v interface{}) error {
 			e.err = err
 			return err
 		}
-	}
-
-	itemType, err := e.parseInputVar(val)
-	if err != nil {
-		return err
-	}
-	if itemType != e.itemType {
-		return fmt.Errorf("%w: %v (expect %v)", ErrTypeUnmatched, itemType, e.itemType)
+	} else {
+		itemType, err := e.parseInputVar(val)
+		if err != nil {
+			return err
+		}
+		if itemType != e.itemType {
+			return fmt.Errorf("%w: %v (expect %v)", ErrTypeUnmatched, itemType, e.itemType)
+		}
 	}
 
 	totalRow := val.Len()
-	itemKindIsPtr := itemType.Kind() == reflect.Pointer
+	itemKindIsPtr := e.itemType.Kind() == reflect.Pointer
 	for row := 0; row < totalRow; row++ {
 		rowVal := val.Index(row)
 		if itemKindIsPtr {
@@ -121,12 +121,11 @@ func (e *Encoder) Encode(v interface{}) error {
 			}
 			rowVal = rowVal.Elem()
 		}
-		if err = e.encodeRow(rowVal); err != nil {
+		if err := e.encodeRow(rowVal); err != nil {
 			e.err = err
 			break
 		}
 	}
-	e.flushWriter()
 	return e.err
 }
 
@@ -152,8 +151,7 @@ func (e *Encoder) EncodeOne(v interface{}) error {
 			e.err = err
 			return err
 		}
-	}
-	if itemType != e.itemType {
+	} else if itemType != e.itemType {
 		return fmt.Errorf("%w: %v (expect %v)", ErrTypeUnmatched, itemType, e.itemType)
 	}
 
@@ -164,16 +162,9 @@ func (e *Encoder) EncodeOne(v interface{}) error {
 	return nil
 }
 
-func (e *Encoder) Finish() {
+func (e *Encoder) Finish() error {
 	e.finished = true
-	e.flushWriter()
-}
-
-func (e *Encoder) flushWriter() {
-	// If the writer has Flush() func, call it
-	if flusher, ok := e.w.(interface{ Flush() }); ok {
-		flusher.Flush()
-	}
+	return e.err
 }
 
 func (e *Encoder) prepareEncode(v reflect.Value) error {
