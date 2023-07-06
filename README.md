@@ -48,40 +48,40 @@ go get github.com/tiendc/go-csvlib
 
 ```
 BenchmarkUnmarshal/csvlib.Unmarshal/100_records
-BenchmarkUnmarshal/csvlib.Unmarshal/100_records-10         	   20876	     55942 ns/op
+BenchmarkUnmarshal/csvlib.Unmarshal/100_records-10       	   21572	     55520 ns/op
 BenchmarkUnmarshal/csvlib.Unmarshal/1000_records
-BenchmarkUnmarshal/csvlib.Unmarshal/1000_records-10        	    2592	    462079 ns/op
+BenchmarkUnmarshal/csvlib.Unmarshal/1000_records-10      	    2641	    455794 ns/op
 BenchmarkUnmarshal/csvlib.Unmarshal/10000_records
-BenchmarkUnmarshal/csvlib.Unmarshal/10000_records-10       	     252	   4766143 ns/op
+BenchmarkUnmarshal/csvlib.Unmarshal/10000_records-10     	     253	   4716323 ns/op
 BenchmarkUnmarshal/csvlib.Unmarshal/100000_records
-BenchmarkUnmarshal/csvlib.Unmarshal/100000_records-10      	      26	  44989255 ns/op
+BenchmarkUnmarshal/csvlib.Unmarshal/100000_records-10    	      26	  44519502 ns/op
 
 BenchmarkUnmarshal/csvutil.Unmarshal/100_records
-BenchmarkUnmarshal/csvutil.Unmarshal/100_records-10        	   27765	     43558 ns/op
+BenchmarkUnmarshal/csvutil.Unmarshal/100_records-10      	   27848	     42927 ns/op
 BenchmarkUnmarshal/csvutil.Unmarshal/1000_records
-BenchmarkUnmarshal/csvutil.Unmarshal/1000_records-10       	    2958	    405543 ns/op
+BenchmarkUnmarshal/csvutil.Unmarshal/1000_records-10     	    2952	    405309 ns/op
 BenchmarkUnmarshal/csvutil.Unmarshal/10000_records
-BenchmarkUnmarshal/csvutil.Unmarshal/10000_records-10      	     296	   4030927 ns/op
+BenchmarkUnmarshal/csvutil.Unmarshal/10000_records-10    	     296	   4059881 ns/op
 BenchmarkUnmarshal/csvutil.Unmarshal/100000_records
-BenchmarkUnmarshal/csvutil.Unmarshal/100000_records-10     	      28	  40479180 ns/op
+BenchmarkUnmarshal/csvutil.Unmarshal/100000_records-10   	      28	  40531973 ns/op
 
 BenchmarkUnmarshal/gocsv.Unmarshal/100_records
-BenchmarkUnmarshal/gocsv.Unmarshal/100_records-10          	    9786	    118998 ns/op
+BenchmarkUnmarshal/gocsv.Unmarshal/100_records-10        	    9830	    118919 ns/op
 BenchmarkUnmarshal/gocsv.Unmarshal/1000_records
-BenchmarkUnmarshal/gocsv.Unmarshal/1000_records-10         	    1020	   1165965 ns/op
+BenchmarkUnmarshal/gocsv.Unmarshal/1000_records-10       	    1022	   1164278 ns/op
 BenchmarkUnmarshal/gocsv.Unmarshal/10000_records
-BenchmarkUnmarshal/gocsv.Unmarshal/10000_records-10        	      85	  12592398 ns/op
+BenchmarkUnmarshal/gocsv.Unmarshal/10000_records-10      	      86	  12609154 ns/op
 BenchmarkUnmarshal/gocsv.Unmarshal/100000_records
-BenchmarkUnmarshal/gocsv.Unmarshal/100000_records-10       	       9	 120881625 ns/op
+BenchmarkUnmarshal/gocsv.Unmarshal/100000_records-10     	       9	 119912333 ns/op
 
 BenchmarkUnmarshal/easycsv.ReadAll/100_records
-BenchmarkUnmarshal/easycsv.ReadAll/100_records-10          	    3772	    312755 ns/op
+BenchmarkUnmarshal/easycsv.ReadAll/100_records-10        	    3831	    315302 ns/op
 BenchmarkUnmarshal/easycsv.ReadAll/1000_records
-BenchmarkUnmarshal/easycsv.ReadAll/1000_records-10         	     387	   3088959 ns/op
+BenchmarkUnmarshal/easycsv.ReadAll/1000_records-10       	     384	   3083931 ns/op
 BenchmarkUnmarshal/easycsv.ReadAll/10000_records
-BenchmarkUnmarshal/easycsv.ReadAll/10000_records-10        	      36	  31415667 ns/op
+BenchmarkUnmarshal/easycsv.ReadAll/10000_records-10      	      34	  31440493 ns/op
 BenchmarkUnmarshal/easycsv.ReadAll/100000_records
-BenchmarkUnmarshal/easycsv.ReadAll/100000_records-10       	       4	 319926677 ns/op
+BenchmarkUnmarshal/easycsv.ReadAll/100000_records-10     	       4	 324321531 ns/op
 ```
 
 ### Marshal
