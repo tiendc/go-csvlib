@@ -11,9 +11,9 @@ import (
 // ValidatorLT validate a value to be less than the given value
 func ValidatorLT[T LTComparable](val T) ValidatorFunc {
 	return func(v interface{}) error {
-		v1, err := convertValue[T](v)
-		if err != nil {
-			return err
+		v1, ok := v.(T)
+		if !ok {
+			return errValidationConversion(v, v1)
 		}
 		if v1 < val {
 			return nil
@@ -25,9 +25,9 @@ func ValidatorLT[T LTComparable](val T) ValidatorFunc {
 // ValidatorLTE validate a value to be less than or equal to the given value
 func ValidatorLTE[T LTComparable](val T) ValidatorFunc {
 	return func(v interface{}) error {
-		v1, err := convertValue[T](v)
-		if err != nil {
-			return err
+		v1, ok := v.(T)
+		if !ok {
+			return errValidationConversion(v, v1)
 		}
 		if v1 <= val {
 			return nil
@@ -39,9 +39,9 @@ func ValidatorLTE[T LTComparable](val T) ValidatorFunc {
 // ValidatorGT validate a value to be greater than the given value
 func ValidatorGT[T LTComparable](val T) ValidatorFunc {
 	return func(v interface{}) error {
-		v1, err := convertValue[T](v)
-		if err != nil {
-			return err
+		v1, ok := v.(T)
+		if !ok {
+			return errValidationConversion(v, v1)
 		}
 		if v1 > val {
 			return nil
@@ -53,9 +53,9 @@ func ValidatorGT[T LTComparable](val T) ValidatorFunc {
 // ValidatorGTE validate a value to be greater than or equal to the given value
 func ValidatorGTE[T LTComparable](val T) ValidatorFunc {
 	return func(v interface{}) error {
-		v1, err := convertValue[T](v)
-		if err != nil {
-			return err
+		v1, ok := v.(T)
+		if !ok {
+			return errValidationConversion(v, v1)
 		}
 		if v1 >= val {
 			return nil
@@ -67,9 +67,9 @@ func ValidatorGTE[T LTComparable](val T) ValidatorFunc {
 // ValidatorRange validate a value to be in the given range (min and max are inclusive)
 func ValidatorRange[T LTComparable](min, max T) ValidatorFunc {
 	return func(v interface{}) error {
-		v1, err := convertValue[T](v)
-		if err != nil {
-			return err
+		v1, ok := v.(T)
+		if !ok {
+			return errValidationConversion(v, v1)
 		}
 		if min <= v1 && v1 <= max {
 			return nil
@@ -81,9 +81,9 @@ func ValidatorRange[T LTComparable](min, max T) ValidatorFunc {
 // ValidatorIN validate a value to be one of the specific values
 func ValidatorIN[T LTComparable](vals ...T) ValidatorFunc {
 	return func(v interface{}) error {
-		v1, err := convertValue[T](v)
-		if err != nil {
-			return err
+		v1, ok := v.(T)
+		if !ok {
+			return errValidationConversion(v, v1)
 		}
 		for _, val := range vals {
 			if v1 == val {
@@ -98,9 +98,9 @@ func ValidatorIN[T LTComparable](vals ...T) ValidatorFunc {
 // Pass argument -1 to skip the equivalent validation.
 func ValidatorStrLen[T StringEx](minLen, maxLen int, lenFuncs ...func(s string) int) ValidatorFunc {
 	return func(v interface{}) error {
-		s, err := convertValue[T](v)
-		if err != nil {
-			return err
+		s, ok := v.(T)
+		if !ok {
+			return errValidationConversion(v, s)
 		}
 		lenFunc := utf8.RuneCountInString
 		if len(lenFuncs) > 0 {
@@ -117,9 +117,9 @@ func ValidatorStrLen[T StringEx](minLen, maxLen int, lenFuncs ...func(s string) 
 // ValidatorStrPrefix validate a string to have prefix matching the given one
 func ValidatorStrPrefix[T StringEx](prefix string) ValidatorFunc {
 	return func(v interface{}) error {
-		s, err := convertValue[T](v)
-		if err != nil {
-			return err
+		s, ok := v.(T)
+		if !ok {
+			return errValidationConversion(v, s)
 		}
 		if strings.HasPrefix(*(*string)(unsafe.Pointer(&s)), prefix) {
 			return nil
@@ -131,9 +131,9 @@ func ValidatorStrPrefix[T StringEx](prefix string) ValidatorFunc {
 // ValidatorStrSuffix validate a string to have suffix matching the given one
 func ValidatorStrSuffix[T StringEx](suffix string) ValidatorFunc {
 	return func(v interface{}) error {
-		s, err := convertValue[T](v)
-		if err != nil {
-			return err
+		s, ok := v.(T)
+		if !ok {
+			return errValidationConversion(v, s)
 		}
 		if strings.HasSuffix(*(*string)(unsafe.Pointer(&s)), suffix) {
 			return nil
@@ -142,10 +142,6 @@ func ValidatorStrSuffix[T StringEx](suffix string) ValidatorFunc {
 	}
 }
 
-func convertValue[T any](v interface{}) (T, error) {
-	val, ok := v.(T)
-	if !ok {
-		return val, fmt.Errorf("%w: (%v -> %v)", ErrValidationConversion, reflect.TypeOf(v), reflect.TypeOf(val))
-	}
-	return val, nil
+func errValidationConversion[T any](v1 interface{}, v2 T) error {
+	return fmt.Errorf("%w: (%v -> %v)", ErrValidationConversion, reflect.TypeOf(v1), reflect.TypeOf(v2))
 }
