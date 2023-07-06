@@ -215,6 +215,10 @@ func (d *Decoder) Decode(v interface{}) (*DecodeResult, error) {
 	return d.result, nil
 }
 
+// DecodeOne decode the next one row data
+// The input var must be a pointer to a struct (e.g. *Student)
+// This func returns error of the current row processing only, after finishing the last row decoding,
+// call Finish() to get the overall result and error.
 func (d *Decoder) DecodeOne(v interface{}) error {
 	if d.finished {
 		return ErrFinished
@@ -256,11 +260,17 @@ func (d *Decoder) DecodeOne(v interface{}) error {
 	return err
 }
 
+// Finish decoding, after calling this func, you can't decode more even there is data
 func (d *Decoder) Finish() (*DecodeResult, error) {
 	d.finished = true
-	return d.result, d.err
+	if d.err.HasError() {
+		return d.result, d.err
+	}
+	return d.result, nil
 }
 
+// prepareDecode prepare for decoding by parsing the struct tags and build column decoders
+// This step is performed one time only before the first row decoding
 func (d *Decoder) prepareDecode(v reflect.Value) error {
 	d.result = &DecodeResult{}
 	_, itemType, err := d.parseOutputVar(v)
