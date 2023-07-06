@@ -309,7 +309,7 @@ func (d *Decoder) prepareDecode(v reflect.Value) error {
 
 // decodeRow decode row data and write the result to the row target value
 // `rowVal` is normally a slice item at a specific index
-// nolint: gocognit
+// nolint: gocyclo,gocognit
 func (d *Decoder) decodeRow(rowData *rowData, rowVal reflect.Value) error {
 	cfg, colsMeta := d.cfg, d.colsMeta
 	if rowData.err != nil {
@@ -344,18 +344,18 @@ func (d *Decoder) decodeRow(rowData *rowData, rowVal reflect.Value) error {
 			outVal = colMeta.inlineColumnMeta.decodeGetColumnValue(outVal)
 		}
 
-		var err error
 		var errs []error
+		hasDecodeErr := false
 		if !colMeta.omitempty || cellText != "" {
-			err = colMeta.decodeFunc(cellText, outVal)
+			if err := colMeta.decodeFunc(cellText, outVal); err != nil {
+				errs = []error{err}
+				hasDecodeErr = true
+			}
 		}
-
-		if err != nil {
-			errs = []error{err}
-		} else {
+		if !hasDecodeErr && len(colMeta.validatorFuncs) > 0 {
 			errs = d.validateParsedCell(outVal, colMeta)
 		}
-		for _, err = range errs {
+		for _, err := range errs {
 			cellErrs = append(cellErrs, d.handleCellError(err, rowData.records[col], colMeta))
 			if cfg.StopOnError || colMeta.stopOnError {
 				d.shouldStop = true
@@ -373,9 +373,6 @@ func (d *Decoder) decodeRow(rowData *rowData, rowVal reflect.Value) error {
 
 // validateParsedCell validate a cell value after decoding
 func (d *Decoder) validateParsedCell(v reflect.Value, colMeta *decodeColumnMeta) []error {
-	if len(colMeta.validatorFuncs) == 0 {
-		return nil
-	}
 	var errs []error
 	vAsIface := v.Interface()
 	for _, validatorFunc := range colMeta.validatorFuncs {
