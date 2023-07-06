@@ -11,6 +11,12 @@ import (
 	"github.com/tiendc/gofn"
 )
 
+func makeDecoder(data string, options ...DecodeOption) *Decoder {
+	r := csv.NewReader(strings.NewReader(data))
+	d := NewDecoder(r, options...)
+	return d
+}
+
 func Test_Decode_configOption(t *testing.T) {
 	type Item struct {
 		ColX bool    `csv:",optional"`
@@ -26,7 +32,7 @@ func Test_Decode_configOption(t *testing.T) {
 			1000,abc123`)
 
 		var v []Item
-		ret, err := NewDecoder(csv.NewReader(strings.NewReader(data)), func(cfg *DecodeConfig) {
+		ret, err := makeDecoder(data, func(cfg *DecodeConfig) {
 			cfg.StopOnError = false
 			cfg.ConfigureColumn("col1", func(config *DecodeColumnConfig) {})
 			cfg.ConfigureColumn("colX", func(config *DecodeColumnConfig) {})
@@ -44,7 +50,7 @@ func Test_Decode_configOption(t *testing.T) {
 			1000,abc123`)
 
 		var v []Item
-		ret, err := NewDecoder(csv.NewReader(strings.NewReader(data)), func(cfg *DecodeConfig) {
+		ret, err := makeDecoder(data, func(cfg *DecodeConfig) {
 			cfg.ParseLocalizedHeader = true
 		}).Decode(&v)
 		assert.Nil(t, ret)
@@ -90,7 +96,7 @@ func Test_Decode_configOption(t *testing.T) {
 		}
 
 		var v []Item
-		ret, err := NewDecoder(csv.NewReader(strings.NewReader(data))).Decode(&v)
+		ret, err := makeDecoder(data).Decode(&v)
 		assert.Nil(t, ret)
 		assert.Equal(t, 1, err.(*Errors).TotalError())
 		assert.ErrorIs(t, err, ErrTagOptionInvalid)
@@ -107,7 +113,7 @@ func Test_Decode_configOption(t *testing.T) {
 		}
 
 		var v []Item
-		ret, err := NewDecoder(csv.NewReader(strings.NewReader(data))).Decode(&v)
+		ret, err := makeDecoder(data).Decode(&v)
 		assert.Nil(t, ret)
 		assert.Equal(t, 1, err.(*Errors).TotalError())
 		assert.ErrorIs(t, err, ErrTagOptionInvalid)
@@ -129,7 +135,7 @@ func Test_Decode_withOptionalColumn(t *testing.T) {
 			100,200`)
 
 		var v []Item
-		ret, err := NewDecoder(csv.NewReader(strings.NewReader(data))).Decode(&v)
+		ret, err := makeDecoder(data).Decode(&v)
 		assert.Nil(t, err)
 		assert.Equal(t, 3, ret.TotalRow())
 		assert.Equal(t, []string{"ColX"}, ret.MissingOptionalColumns())
@@ -143,7 +149,7 @@ func Test_Decode_withOptionalColumn(t *testing.T) {
 			100,200`)
 
 		var v []Item
-		ret, err := NewDecoder(csv.NewReader(strings.NewReader(data))).Decode(&v)
+		ret, err := makeDecoder(data).Decode(&v)
 		assert.Nil(t, ret)
 		assert.ErrorIs(t, err, ErrHeaderColumnRequired)
 	})
@@ -163,7 +169,7 @@ func Test_Decode_withUnrecognizedColumn(t *testing.T) {
 
 	t.Run("#1: success", func(t *testing.T) {
 		var v []Item
-		ret, err := NewDecoder(csv.NewReader(strings.NewReader(data)), func(cfg *DecodeConfig) {
+		ret, err := makeDecoder(data, func(cfg *DecodeConfig) {
 			cfg.AllowUnrecognizedColumns = true
 		}).Decode(&v)
 		assert.Nil(t, err)
@@ -175,7 +181,7 @@ func Test_Decode_withUnrecognizedColumn(t *testing.T) {
 
 	t.Run("#1: failure", func(t *testing.T) {
 		var v []Item
-		ret, err := NewDecoder(csv.NewReader(strings.NewReader(data))).Decode(&v)
+		ret, err := makeDecoder(data).Decode(&v)
 		assert.Nil(t, ret)
 		assert.ErrorIs(t, err, ErrHeaderColumnUnrecognized)
 	})
@@ -196,7 +202,7 @@ func Test_Decode_withPreprocessor(t *testing.T) {
 			100,200`)
 
 		var v []Item
-		ret, err := NewDecoder(csv.NewReader(strings.NewReader(data)), func(cfg *DecodeConfig) {
+		ret, err := makeDecoder(data, func(cfg *DecodeConfig) {
 			cfg.TrimSpace = true
 		}).Decode(&v)
 		assert.Nil(t, err)
@@ -211,7 +217,7 @@ func Test_Decode_withPreprocessor(t *testing.T) {
 			100,200`)
 
 		var v []Item
-		ret, err := NewDecoder(csv.NewReader(strings.NewReader(data)), func(cfg *DecodeConfig) {
+		ret, err := makeDecoder(data, func(cfg *DecodeConfig) {
 			cfg.ConfigureColumn("col2", func(cfg *DecodeColumnConfig) {
 				cfg.TrimSpace = true
 			})
@@ -228,7 +234,7 @@ func Test_Decode_withPreprocessor(t *testing.T) {
 			100," 200,123.45"`)
 
 		var v []Item
-		ret, err := NewDecoder(csv.NewReader(strings.NewReader(data)), func(cfg *DecodeConfig) {
+		ret, err := makeDecoder(data, func(cfg *DecodeConfig) {
 			cfg.ConfigureColumn("col2", func(cfg *DecodeColumnConfig) {
 				cfg.PreprocessorFuncs = []ProcessorFunc{ProcessorTrim, ProcessorNumberUngroupComma}
 			})
@@ -245,7 +251,7 @@ func Test_Decode_withPreprocessor(t *testing.T) {
 			100,200 `)
 
 		var v []Item
-		_, err := NewDecoder(csv.NewReader(strings.NewReader(data))).Decode(&v)
+		_, err := makeDecoder(data).Decode(&v)
 		assert.ErrorIs(t, err, ErrDecodeValueType)
 	})
 }
@@ -265,7 +271,7 @@ func Test_Decode_withValidator(t *testing.T) {
 			1000,abc123`)
 
 		var v []Item
-		ret, err := NewDecoder(csv.NewReader(strings.NewReader(data)), func(cfg *DecodeConfig) {
+		ret, err := makeDecoder(data, func(cfg *DecodeConfig) {
 			cfg.ConfigureColumn("col1", func(cfg *DecodeColumnConfig) {
 				cfg.ValidatorFuncs = []ValidatorFunc{ValidatorRange(int16(0), int16(1000))}
 			})
@@ -282,7 +288,7 @@ func Test_Decode_withValidator(t *testing.T) {
 			1000,abc123`)
 
 		var v []Item
-		ret, err := NewDecoder(csv.NewReader(strings.NewReader(data)), func(cfg *DecodeConfig) {
+		ret, err := makeDecoder(data, func(cfg *DecodeConfig) {
 			cfg.ConfigureColumn("col1", func(cfg *DecodeColumnConfig) {
 				cfg.ValidatorFuncs = []ValidatorFunc{ValidatorRange(int16(1), int16(1000))}
 			})
@@ -298,7 +304,7 @@ func Test_Decode_withValidator(t *testing.T) {
 			1000,abc123`)
 
 		var v []Item
-		ret, err := NewDecoder(csv.NewReader(strings.NewReader(data)), func(cfg *DecodeConfig) {
+		ret, err := makeDecoder(data, func(cfg *DecodeConfig) {
 			cfg.StopOnError = false
 			cfg.ConfigureColumn("col1", func(cfg *DecodeColumnConfig) {
 				cfg.ValidatorFuncs = []ValidatorFunc{ValidatorRange(int16(0), int16(999))}
@@ -330,7 +336,7 @@ func Test_Decode_multipleCalls(t *testing.T) {
 			100,200`)
 
 		var v []Item
-		d := NewDecoder(csv.NewReader(strings.NewReader(data)))
+		d := makeDecoder(data)
 		ret, err := d.Decode(&v)
 		assert.Nil(t, err)
 		assert.Equal(t, 3, ret.TotalRow())
@@ -351,7 +357,7 @@ func Test_Decode_multipleCalls(t *testing.T) {
 			100,abc`)
 
 		var v []Item
-		d := NewDecoder(csv.NewReader(strings.NewReader(data)))
+		d := makeDecoder(data)
 		ret, err := d.Decode(&v)
 		assert.NotNil(t, ret)
 		assert.ErrorIs(t, err, ErrDecodeValueType)
@@ -393,7 +399,7 @@ func Test_Decode_withFixedInlineColumn(t *testing.T) {
 			1000,222,abc123`)
 
 		var v []Item
-		ret, err := NewDecoder(csv.NewReader(strings.NewReader(data))).Decode(&v)
+		ret, err := makeDecoder(data).Decode(&v)
 		assert.Nil(t, err)
 		assert.Equal(t, 3, ret.TotalRow())
 		assert.Equal(t, []Item{{Col1: 1, Sub1: Sub{Col1: 111}, Col2: "abcxyz123"},
@@ -407,7 +413,7 @@ func Test_Decode_withFixedInlineColumn(t *testing.T) {
 			1000,abc123,222`)
 
 		var v []Item2
-		ret, err := NewDecoder(csv.NewReader(strings.NewReader(data)), func(cfg *DecodeConfig) {
+		ret, err := makeDecoder(data, func(cfg *DecodeConfig) {
 			cfg.RequireColumnOrder = false
 		}).Decode(&v)
 		assert.Nil(t, err)
@@ -422,7 +428,7 @@ func Test_Decode_withFixedInlineColumn(t *testing.T) {
 			1000,222,abc123`)
 
 		var v []Item
-		ret, err := NewDecoder(csv.NewReader(strings.NewReader(data)), func(cfg *DecodeConfig) {
+		ret, err := makeDecoder(data, func(cfg *DecodeConfig) {
 			cfg.NoHeaderMode = true
 		}).Decode(&v)
 		assert.Nil(t, ret)
@@ -446,7 +452,7 @@ func Test_Decode_withFixedInlineColumn(t *testing.T) {
 		}
 
 		var v []Item
-		ret, err := NewDecoder(csv.NewReader(strings.NewReader(data)), func(cfg *DecodeConfig) {
+		ret, err := makeDecoder(data, func(cfg *DecodeConfig) {
 			cfg.RequireColumnOrder = false
 		}).Decode(&v)
 		assert.Nil(t, err)
@@ -468,7 +474,7 @@ func Test_Decode_withFixedInlineColumn(t *testing.T) {
 		}
 
 		var v []Item
-		ret, err := NewDecoder(csv.NewReader(strings.NewReader(data)), func(cfg *DecodeConfig) {
+		ret, err := makeDecoder(data, func(cfg *DecodeConfig) {
 			cfg.NoHeaderMode = true
 		}).Decode(&v)
 		assert.Nil(t, ret)
@@ -490,7 +496,7 @@ func Test_Decode_withFixedInlineColumn(t *testing.T) {
 		}
 
 		var v []Item
-		ret, err := NewDecoder(csv.NewReader(strings.NewReader(data)), func(cfg *DecodeConfig) {
+		ret, err := makeDecoder(data, func(cfg *DecodeConfig) {
 			cfg.StopOnError = false
 			cfg.RequireColumnOrder = false
 			cfg.ConfigureColumn("sub_sub1", func(cfg *DecodeColumnConfig) {
@@ -526,7 +532,7 @@ func Test_Decode_withDynamicInlineColumn(t *testing.T) {
 			1000,222,22,abc123`)
 
 		var v []Item
-		ret, err := NewDecoder(csv.NewReader(strings.NewReader(data))).Decode(&v)
+		ret, err := makeDecoder(data).Decode(&v)
 		assert.Nil(t, err)
 		assert.Equal(t, 3, ret.TotalRow())
 		header := []string{"sub1", "sub2"}
@@ -543,7 +549,7 @@ func Test_Decode_withDynamicInlineColumn(t *testing.T) {
 			1000,abc123,222,22`)
 
 		var v []Item
-		ret, err := NewDecoder(csv.NewReader(strings.NewReader(data)), func(cfg *DecodeConfig) {
+		ret, err := makeDecoder(data, func(cfg *DecodeConfig) {
 			cfg.RequireColumnOrder = false
 		}).Decode(&v)
 		assert.Nil(t, ret)
@@ -558,7 +564,7 @@ func Test_Decode_withDynamicInlineColumn(t *testing.T) {
 			1000,abc123,222,22`)
 
 		var v []Item
-		ret, err := NewDecoder(csv.NewReader(strings.NewReader(data)), func(cfg *DecodeConfig) {
+		ret, err := makeDecoder(data, func(cfg *DecodeConfig) {
 			cfg.NoHeaderMode = true
 		}).Decode(&v)
 		assert.Nil(t, ret)
@@ -582,7 +588,7 @@ func Test_Decode_withDynamicInlineColumn(t *testing.T) {
 		}
 
 		var v []Item
-		ret, err := NewDecoder(csv.NewReader(strings.NewReader(data))).Decode(&v)
+		ret, err := makeDecoder(data).Decode(&v)
 		assert.Nil(t, err)
 		assert.Equal(t, 3, ret.TotalRow())
 		header := []string{"sub_sub1", "sub_sub2"}
@@ -599,7 +605,7 @@ func Test_Decode_withDynamicInlineColumn(t *testing.T) {
 			1000,222 ,22,abc123`)
 
 		var v []Item
-		ret, err := NewDecoder(csv.NewReader(strings.NewReader(data)), func(cfg *DecodeConfig) {
+		ret, err := makeDecoder(data, func(cfg *DecodeConfig) {
 			cfg.StopOnError = false
 			cfg.ConfigureColumn("sub1", func(cfg *DecodeColumnConfig) {
 				cfg.PreprocessorFuncs = []ProcessorFunc{ProcessorTrim}
@@ -627,7 +633,7 @@ func Test_Decode_withDynamicInlineColumn(t *testing.T) {
 		}
 
 		var v []Item
-		ret, err := NewDecoder(csv.NewReader(strings.NewReader(data)), func(cfg *DecodeConfig) {
+		ret, err := makeDecoder(data, func(cfg *DecodeConfig) {
 			cfg.StopOnError = false
 			cfg.ConfigureColumn("sub_sub1", func(cfg *DecodeColumnConfig) {
 				cfg.PreprocessorFuncs = []ProcessorFunc{ProcessorTrim}
@@ -656,7 +662,7 @@ func Test_Decode_withDynamicInlineColumn(t *testing.T) {
 		}
 
 		var v []Item
-		ret, err := NewDecoder(csv.NewReader(strings.NewReader(data))).Decode(&v)
+		ret, err := makeDecoder(data).Decode(&v)
 		assert.ErrorIs(t, err, ErrHeaderDynamicTypeInvalid)
 		assert.Nil(t, ret)
 		assert.Nil(t, v)
@@ -679,7 +685,7 @@ func Test_Decode_withDynamicInlineColumn(t *testing.T) {
 		}
 
 		var v []Item
-		ret, err := NewDecoder(csv.NewReader(strings.NewReader(data))).Decode(&v)
+		ret, err := makeDecoder(data).Decode(&v)
 		assert.ErrorIs(t, err, ErrHeaderDynamicTypeInvalid)
 		assert.Nil(t, ret)
 		assert.Nil(t, v)
@@ -701,7 +707,7 @@ func Test_Decode_withLocalization(t *testing.T) {
 			1000,abc123`)
 
 		var v []Item
-		ret, err := NewDecoder(csv.NewReader(strings.NewReader(data)), func(cfg *DecodeConfig) {
+		ret, err := makeDecoder(data, func(cfg *DecodeConfig) {
 			cfg.ParseLocalizedHeader = true
 			cfg.LocalizationFunc = localizeFail
 		}).Decode(&v)
@@ -719,7 +725,7 @@ func Test_Decode_withLocalization(t *testing.T) {
 			100000,abc123`)
 
 		var v []Item
-		_, err := NewDecoder(csv.NewReader(strings.NewReader(data)), func(cfg *DecodeConfig) {
+		_, err := makeDecoder(data, func(cfg *DecodeConfig) {
 			cfg.ConfigureColumn("col1", func(cfg *DecodeColumnConfig) {
 				cfg.OnCellErrorFunc = func(e *CellError) {
 					if errors.Is(e, ErrDecodeValueType) {
@@ -752,7 +758,7 @@ func Test_Decode_withCustomUnmarshaler(t *testing.T) {
 		}
 
 		var v []Item
-		ret, err := NewDecoder(csv.NewReader(strings.NewReader(data))).Decode(&v)
+		ret, err := makeDecoder(data).Decode(&v)
 		assert.Nil(t, ret)
 		assert.ErrorIs(t, err, ErrTypeUnsupported)
 	})
@@ -772,7 +778,7 @@ func Test_Decode_withCustomUnmarshaler(t *testing.T) {
 		}
 
 		var v []Item
-		ret, err := NewDecoder(csv.NewReader(strings.NewReader(data))).Decode(&v)
+		ret, err := makeDecoder(data).Decode(&v)
 		assert.Nil(t, err)
 		assert.Equal(t, 3, ret.TotalRow())
 		assert.Equal(t, []Item{
@@ -796,7 +802,7 @@ func Test_Decode_withCustomUnmarshaler(t *testing.T) {
 		}
 
 		var v []Item
-		ret, err := NewDecoder(csv.NewReader(strings.NewReader(data))).Decode(&v)
+		ret, err := makeDecoder(data).Decode(&v)
 		assert.Nil(t, err)
 		assert.Equal(t, 3, ret.TotalRow())
 		assert.Equal(t, []Item{
@@ -819,7 +825,7 @@ func Test_Decode_specialCases(t *testing.T) {
 			`col1,col2`)
 
 		var v []Item
-		ret, err := NewDecoder(csv.NewReader(strings.NewReader(data))).Decode(&v)
+		ret, err := makeDecoder(data).Decode(&v)
 		assert.Nil(t, err)
 		assert.Equal(t, 1, ret.TotalRow())
 		assert.Equal(t, []string{"ColX"}, ret.MissingOptionalColumns())
@@ -838,7 +844,7 @@ func Test_Decode_specialCases(t *testing.T) {
 		}
 
 		var v []Item
-		ret, err := NewDecoder(csv.NewReader(strings.NewReader(data)), func(cfg *DecodeConfig) {
+		ret, err := makeDecoder(data, func(cfg *DecodeConfig) {
 			cfg.NoHeaderMode = true
 		}).Decode(&v)
 		assert.Nil(t, err)
@@ -861,7 +867,7 @@ func Test_Decode_specialCases(t *testing.T) {
 		}
 
 		var v []Item
-		ret, err := NewDecoder(csv.NewReader(strings.NewReader(data))).Decode(&v)
+		ret, err := makeDecoder(data).Decode(&v)
 		assert.Nil(t, ret)
 		assert.ErrorIs(t, err, ErrHeaderColumnDuplicated)
 	})
@@ -873,7 +879,7 @@ func Test_Decode_specialCases(t *testing.T) {
 			1000,abc123,b`)
 
 		var v []Item
-		ret, err := NewDecoder(csv.NewReader(strings.NewReader(data))).Decode(&v)
+		ret, err := makeDecoder(data).Decode(&v)
 		assert.Nil(t, ret)
 		assert.ErrorIs(t, err, ErrHeaderColumnDuplicated)
 	})
@@ -892,7 +898,7 @@ func Test_Decode_specialCases(t *testing.T) {
 		}
 
 		var v []Item3
-		ret, err := NewDecoder(csv.NewReader(strings.NewReader(data))).Decode(&v)
+		ret, err := makeDecoder(data).Decode(&v)
 		assert.Nil(t, ret)
 		assert.ErrorIs(t, err, ErrHeaderColumnInvalid)
 	})
@@ -904,7 +910,7 @@ func Test_Decode_specialCases(t *testing.T) {
 			1000,abc123`)
 
 		var v []Item
-		ret, err := NewDecoder(csv.NewReader(strings.NewReader(data))).Decode(&v)
+		ret, err := makeDecoder(data).Decode(&v)
 		assert.Nil(t, ret)
 		assert.ErrorIs(t, err, ErrHeaderColumnOrderInvalid)
 	})
@@ -916,7 +922,7 @@ func Test_Decode_specialCases(t *testing.T) {
 			100,200`)
 
 		var v []*Item
-		ret, err := NewDecoder(csv.NewReader(strings.NewReader(data))).Decode(&v)
+		ret, err := makeDecoder(data).Decode(&v)
 		assert.Nil(t, err)
 		assert.Equal(t, 3, ret.TotalRow())
 		assert.Equal(t, []string{"ColX"}, ret.MissingOptionalColumns())
@@ -938,7 +944,7 @@ func Test_Decode_specialTypes(t *testing.T) {
 		}
 
 		var v []Item
-		ret, err := NewDecoder(csv.NewReader(strings.NewReader(data))).Decode(&v)
+		ret, err := makeDecoder(data).Decode(&v)
 		assert.Nil(t, err)
 		assert.Equal(t, 3, ret.TotalRow())
 		assert.Equal(t, []Item{{Col1: 1, Col2: "2.2"}, {Col1: 100, Col2: "3.3"}}, v)
@@ -957,7 +963,7 @@ func Test_Decode_specialTypes(t *testing.T) {
 		}
 
 		var v []Item
-		ret, err := NewDecoder(csv.NewReader(strings.NewReader(data))).Decode(&v)
+		ret, err := makeDecoder(data).Decode(&v)
 		assert.Nil(t, err)
 		assert.Equal(t, 3, ret.TotalRow())
 		assert.Equal(t, []Item{{Col1: 1, Col2: gofn.New[interface{}]("2.2")},
@@ -1004,7 +1010,7 @@ func Test_Decode_specialTypes(t *testing.T) {
 		}
 
 		var v []Item
-		ret, err := NewDecoder(csv.NewReader(strings.NewReader(data))).Decode(&v)
+		ret, err := makeDecoder(data).Decode(&v)
 		assert.Nil(t, err)
 		assert.Equal(t, 2, ret.TotalRow())
 		assert.Equal(t, []Item{
@@ -1034,7 +1040,7 @@ func Test_Decode_incorrectStructure(t *testing.T) {
 			3`)
 
 		var v []Item
-		ret, err := NewDecoder(csv.NewReader(strings.NewReader(data))).Decode(&v)
+		ret, err := makeDecoder(data).Decode(&v)
 		assert.Nil(t, ret)
 		assert.ErrorIs(t, err, ErrDecodeRowFieldCount)
 	})
@@ -1048,7 +1054,7 @@ func Test_Decode_incorrectStructure(t *testing.T) {
 			3`)
 
 		var v []Item
-		ret, err := NewDecoder(csv.NewReader(strings.NewReader(data)), func(cfg *DecodeConfig) {
+		ret, err := makeDecoder(data, func(cfg *DecodeConfig) {
 			cfg.TreatIncorrectStructureAsError = false
 			cfg.StopOnError = false
 		}).Decode(&v)
@@ -1067,7 +1073,7 @@ func Test_Decode_incorrectStructure(t *testing.T) {
 			2,2.2""`)
 
 		var v []Item
-		ret, err := NewDecoder(csv.NewReader(strings.NewReader(data))).Decode(&v)
+		ret, err := makeDecoder(data).Decode(&v)
 		assert.Nil(t, ret)
 		assert.Equal(t, 1, err.(*Errors).TotalError())
 		assert.ErrorIs(t, err, ErrDecodeQuoteInvalid)
@@ -1082,7 +1088,7 @@ func Test_Decode_incorrectStructure(t *testing.T) {
 			3,3.3`)
 
 		var v []Item
-		ret, err := NewDecoder(csv.NewReader(strings.NewReader(data)), func(cfg *DecodeConfig) {
+		ret, err := makeDecoder(data, func(cfg *DecodeConfig) {
 			cfg.TreatIncorrectStructureAsError = false
 			cfg.StopOnError = false
 		}).Decode(&v)
@@ -1109,7 +1115,7 @@ func Test_DecodeOne(t *testing.T) {
 			100,200`)
 
 		var v1, v2, v3 Item
-		d := NewDecoder(csv.NewReader(strings.NewReader(data)))
+		d := makeDecoder(data)
 		err := d.DecodeOne(&v1)
 		assert.Nil(t, err)
 		assert.Equal(t, Item{Col1: 1, Col2: 2.123}, v1)
@@ -1127,7 +1133,7 @@ func Test_DecodeOne(t *testing.T) {
 			100,200`)
 
 		var v1, v2, v3 *Item
-		d := NewDecoder(csv.NewReader(strings.NewReader(data)))
+		d := makeDecoder(data)
 		err := d.DecodeOne(v1)
 		assert.ErrorIs(t, err, ErrValueNil)
 		err = d.DecodeOne(v2)
@@ -1143,7 +1149,7 @@ func Test_DecodeOne(t *testing.T) {
 			100,200`)
 
 		var v1 []string
-		d := NewDecoder(csv.NewReader(strings.NewReader(data)))
+		d := makeDecoder(data)
 		err := d.DecodeOne(v1)
 		assert.ErrorIs(t, err, ErrTypeInvalid)
 		var v2 int
@@ -1161,7 +1167,7 @@ func Test_DecodeOne(t *testing.T) {
 			100,200`)
 
 		var v1, v2 Item
-		d := NewDecoder(csv.NewReader(strings.NewReader(data)))
+		d := makeDecoder(data)
 		err := d.DecodeOne(&v1)
 		assert.Nil(t, err)
 		assert.Equal(t, Item{Col1: 1, Col2: 2.123}, v1)
@@ -1182,7 +1188,7 @@ func Test_DecodeOne(t *testing.T) {
 
 		var v1 Item
 		var v2 Item2
-		d := NewDecoder(csv.NewReader(strings.NewReader(data)))
+		d := makeDecoder(data)
 		err := d.DecodeOne(&v1)
 		assert.Nil(t, err)
 		assert.Equal(t, Item{Col1: 1, Col2: 2.123}, v1)
@@ -1195,7 +1201,7 @@ func Test_DecodeOne(t *testing.T) {
 			`col1,col2`)
 
 		var v Item
-		d := NewDecoder(csv.NewReader(strings.NewReader(data)))
+		d := makeDecoder(data)
 		err := d.DecodeOne(&v)
 		assert.ErrorIs(t, err, ErrFinished)
 	})
@@ -1207,7 +1213,7 @@ func Test_DecodeOne(t *testing.T) {
 			100,200,bbB,bBb`)
 
 		var v1, v2, v3 Item
-		d := NewDecoder(csv.NewReader(strings.NewReader(data)))
+		d := makeDecoder(data)
 		err := d.DecodeOne(&v1)
 		assert.Nil(t, err)
 		assert.Equal(t, Item{Col1: 1, Col2: 2.123, Col3: "AAA", Col4: gofn.New[StrLowerType]("aaa")}, v1)

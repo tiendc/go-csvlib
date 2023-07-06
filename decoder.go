@@ -171,17 +171,18 @@ func (d *Decoder) Decode(v interface{}) (*DecodeResult, error) {
 			d.shouldStop = true
 			return nil, d.err
 		}
-	}
-	typ, itemType, err := d.parseOutputVar(val)
-	if err != nil {
-		return nil, err
-	}
-	if itemType != d.itemType {
-		return nil, fmt.Errorf("%w: %v (expect %v)", ErrTypeUnmatched, itemType, d.itemType)
+	} else {
+		itemType, err := d.parseOutputVar(val)
+		if err != nil {
+			return nil, err
+		}
+		if itemType != d.itemType {
+			return nil, fmt.Errorf("%w: %v (expect %v)", ErrTypeUnmatched, itemType, d.itemType)
+		}
 	}
 
-	outSlice := reflect.MakeSlice(typ, len(d.rowsData), len(d.rowsData))
-	itemKindIsPtr := itemType.Kind() == reflect.Pointer
+	outSlice := reflect.MakeSlice(val.Type().Elem(), len(d.rowsData), len(d.rowsData))
+	itemKindIsPtr := d.itemType.Kind() == reflect.Pointer
 	row := 0
 	for !d.shouldStop && len(d.rowsData) > 0 {
 		// Reduce memory consumption by splitting the source data into chunks (10000 items each)
@@ -194,10 +195,10 @@ func (d *Decoder) Decode(v interface{}) (*DecodeResult, error) {
 			rowVal := outSlice.Index(row)
 			row++
 			if itemKindIsPtr {
-				rowVal.Set(reflect.New(itemType.Elem()))
+				rowVal.Set(reflect.New(d.itemType.Elem()))
 				rowVal = rowVal.Elem()
 			}
-			if err = d.decodeRow(rowData, rowVal); err != nil {
+			if err := d.decodeRow(rowData, rowVal); err != nil {
 				d.err.Add(err)
 				if d.cfg.StopOnError || d.shouldStop {
 					d.shouldStop = true
@@ -238,9 +239,10 @@ func (d *Decoder) DecodeOne(v interface{}) error {
 			d.shouldStop = true
 			return err
 		}
-	}
-	if itemType != d.itemType {
-		return fmt.Errorf("%w: %v (expect %v)", ErrTypeUnmatched, itemType, d.itemType)
+	} else {
+		if itemType != d.itemType {
+			return fmt.Errorf("%w: %v (expect %v)", ErrTypeUnmatched, itemType, d.itemType)
+		}
 	}
 
 	if len(d.rowsData) == 0 {
@@ -273,7 +275,7 @@ func (d *Decoder) Finish() (*DecodeResult, error) {
 // This step is performed one time only before the first row decoding
 func (d *Decoder) prepareDecode(v reflect.Value) error {
 	d.result = &DecodeResult{}
-	_, itemType, err := d.parseOutputVar(v)
+	itemType, err := d.parseOutputVar(v)
 	if err != nil {
 		return err
 	}
@@ -409,15 +411,14 @@ func (d *Decoder) handleCellError(err error, value string, colMeta *decodeColumn
 }
 
 // parseOutputVar parse and validate the input var
-func (d *Decoder) parseOutputVar(v reflect.Value) (typ reflect.Type, itemType reflect.Type, err error) {
+func (d *Decoder) parseOutputVar(v reflect.Value) (itemType reflect.Type, err error) {
 	if v.Kind() != reflect.Pointer || v.IsNil() {
 		err = fmt.Errorf("%w: %v", ErrTypeInvalid, v.Kind())
 		return
 	}
 
-	typ = v.Type().Elem() // E.g. []Item
-
-	switch typ.Kind() { // nolint: exhaustive
+	typ := v.Type().Elem() // E.g. []Item
+	switch typ.Kind() {    // nolint: exhaustive
 	case reflect.Slice, reflect.Array:
 	default:
 		err = fmt.Errorf("%w: %v", ErrTypeInvalid, typ.Kind())
