@@ -16,6 +16,7 @@ func Test_parseTag(t *testing.T) {
 		Col4 string            `csv:""`
 		Col5 string            `csv:",unsupported"`
 		Col6 InlineColumn[int] `csv:"col6,inline,prefix=xyz"`
+		col7 int32             `csv:"col7"` // nolint: unused
 	}
 	structType := reflect.TypeOf(Item{})
 
@@ -53,4 +54,8 @@ func Test_parseTag(t *testing.T) {
 	tag6, err := parseTag(DefaultTagName, col6)
 	assert.Nil(t, err)
 	assert.True(t, tag6.name == "col6" && tag6.inline && tag6.prefix == "xyz")
+
+	col7, _ := structType.FieldByName("col7")
+	_, err = parseTag(DefaultTagName, col7)
+	assert.ErrorIs(t, err, ErrTagOptionInvalid)
 }
