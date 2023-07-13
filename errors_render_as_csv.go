@@ -114,14 +114,6 @@ func NewCSVRenderer(err *Errors, options ...func(*CSVRenderConfig)) (*CSVRendere
 }
 
 // Render render Errors object as CSV rows data
-// Sample output:
-//
-//	There are 5 total errors in your CSV file
-//	Row 20 (line 21): column 2: invalid type (Int), column 4: value (12345) too big
-//	Row 30 (line 33): column 2: invalid type (Int), column 4: value (12345) too big, column 6: unexpected
-//	Row 35 (line 38): column 2: invalid type (Int), column 4: value (12345) too big
-//	Row 40 (line 44): column 2: invalid type (Int), column 4: value (12345) too big
-//	Row 41 (line 50): invalid number of columns (10)
 func (r *CSVRenderer) Render() (data [][]string, transErr error, err error) {
 	cfg := r.cfg
 	r.startCellErrIndex = 0
