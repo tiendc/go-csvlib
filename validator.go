@@ -10,7 +10,7 @@ import (
 
 // ValidatorLT validate a value to be less than the given value
 func ValidatorLT[T LTComparable](val T) ValidatorFunc {
-	return func(v interface{}) error {
+	return func(v any) error {
 		v1, ok := v.(T)
 		if !ok {
 			return errValidationConversion(v, v1)
@@ -24,7 +24,7 @@ func ValidatorLT[T LTComparable](val T) ValidatorFunc {
 
 // ValidatorLTE validate a value to be less than or equal to the given value
 func ValidatorLTE[T LTComparable](val T) ValidatorFunc {
-	return func(v interface{}) error {
+	return func(v any) error {
 		v1, ok := v.(T)
 		if !ok {
 			return errValidationConversion(v, v1)
@@ -38,7 +38,7 @@ func ValidatorLTE[T LTComparable](val T) ValidatorFunc {
 
 // ValidatorGT validate a value to be greater than the given value
 func ValidatorGT[T LTComparable](val T) ValidatorFunc {
-	return func(v interface{}) error {
+	return func(v any) error {
 		v1, ok := v.(T)
 		if !ok {
 			return errValidationConversion(v, v1)
@@ -52,7 +52,7 @@ func ValidatorGT[T LTComparable](val T) ValidatorFunc {
 
 // ValidatorGTE validate a value to be greater than or equal to the given value
 func ValidatorGTE[T LTComparable](val T) ValidatorFunc {
-	return func(v interface{}) error {
+	return func(v any) error {
 		v1, ok := v.(T)
 		if !ok {
 			return errValidationConversion(v, v1)
@@ -66,7 +66,7 @@ func ValidatorGTE[T LTComparable](val T) ValidatorFunc {
 
 // ValidatorRange validate a value to be in the given range (min and max are inclusive)
 func ValidatorRange[T LTComparable](min, max T) ValidatorFunc {
-	return func(v interface{}) error {
+	return func(v any) error {
 		v1, ok := v.(T)
 		if !ok {
 			return errValidationConversion(v, v1)
@@ -80,7 +80,7 @@ func ValidatorRange[T LTComparable](min, max T) ValidatorFunc {
 
 // ValidatorIN validate a value to be one of the specific values
 func ValidatorIN[T LTComparable](vals ...T) ValidatorFunc {
-	return func(v interface{}) error {
+	return func(v any) error {
 		v1, ok := v.(T)
 		if !ok {
 			return errValidationConversion(v, v1)
@@ -97,7 +97,7 @@ func ValidatorIN[T LTComparable](vals ...T) ValidatorFunc {
 // ValidatorStrLen validate a string to have length in the given range
 // Pass argument -1 to skip the equivalent validation.
 func ValidatorStrLen[T StringEx](minLen, maxLen int, lenFuncs ...func(s string) int) ValidatorFunc {
-	return func(v interface{}) error {
+	return func(v any) error {
 		s, ok := v.(T)
 		if !ok {
 			return errValidationConversion(v, s)
@@ -116,7 +116,7 @@ func ValidatorStrLen[T StringEx](minLen, maxLen int, lenFuncs ...func(s string) 
 
 // ValidatorStrPrefix validate a string to have prefix matching the given one
 func ValidatorStrPrefix[T StringEx](prefix string) ValidatorFunc {
-	return func(v interface{}) error {
+	return func(v any) error {
 		s, ok := v.(T)
 		if !ok {
 			return errValidationConversion(v, s)
@@ -130,7 +130,7 @@ func ValidatorStrPrefix[T StringEx](prefix string) ValidatorFunc {
 
 // ValidatorStrSuffix validate a string to have suffix matching the given one
 func ValidatorStrSuffix[T StringEx](suffix string) ValidatorFunc {
-	return func(v interface{}) error {
+	return func(v any) error {
 		s, ok := v.(T)
 		if !ok {
 			return errValidationConversion(v, s)
@@ -142,6 +142,6 @@ func ValidatorStrSuffix[T StringEx](suffix string) ValidatorFunc {
 	}
 }
 
-func errValidationConversion[T any](v1 interface{}, v2 T) error {
+func errValidationConversion[T any](v1 any, v2 T) error {
 	return fmt.Errorf("%w: (%v -> %v)", ErrValidationConversion, reflect.TypeOf(v1), reflect.TypeOf(v2))
 }

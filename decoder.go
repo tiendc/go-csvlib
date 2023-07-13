@@ -156,7 +156,7 @@ func NewDecoder(r Reader, options ...DecodeOption) *Decoder {
 
 // Decode decode input data and store the result in the given variable
 // The input var must be a pointer to a slice, e.g. `*[]Student` (recommended) or `*[]*Student`
-func (d *Decoder) Decode(v interface{}) (*DecodeResult, error) {
+func (d *Decoder) Decode(v any) (*DecodeResult, error) {
 	if d.finished {
 		return nil, ErrFinished
 	}
@@ -220,7 +220,7 @@ func (d *Decoder) Decode(v interface{}) (*DecodeResult, error) {
 // The input var must be a pointer to a struct (e.g. *Student)
 // This func returns error of the current row processing only, after finishing the last row decoding,
 // call Finish() to get the overall result and error.
-func (d *Decoder) DecodeOne(v interface{}) error {
+func (d *Decoder) DecodeOne(v any) error {
 	if d.finished {
 		return ErrFinished
 	}

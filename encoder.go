@@ -87,7 +87,7 @@ func NewEncoder(w Writer, options ...EncodeOption) *Encoder {
 
 // Encode encode input data stored in the given variable
 // The input var must be a slice, e.g. `[]Student` or `[]*Student`
-func (e *Encoder) Encode(v interface{}) error {
+func (e *Encoder) Encode(v any) error {
 	if e.finished {
 		return ErrFinished
 	}
@@ -130,7 +130,7 @@ func (e *Encoder) Encode(v interface{}) error {
 }
 
 // EncodeOne encode single object into a single CSV row
-func (e *Encoder) EncodeOne(v interface{}) error {
+func (e *Encoder) EncodeOne(v any) error {
 	if e.finished {
 		return ErrFinished
 	}
