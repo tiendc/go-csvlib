@@ -4,15 +4,6 @@ import (
 	"reflect"
 )
 
-// func isKindOf(k reflect.Kind, kinds ...reflect.Kind) bool {
-//	for _, kk := range kinds {
-//		if k == kk {
-//			return true
-//		}
-//	}
-//	return false
-// }
-
 func isKindOrPtrOf(t reflect.Type, kinds ...reflect.Kind) bool {
 	k := t.Kind()
 	if k == reflect.Pointer {

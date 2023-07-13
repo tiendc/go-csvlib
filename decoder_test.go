@@ -931,7 +931,7 @@ func Test_Decode_specialCases(t *testing.T) {
 }
 
 func Test_Decode_specialTypes(t *testing.T) {
-	t.Run("#1: interface{} type", func(t *testing.T) {
+	t.Run("#1: any type", func(t *testing.T) {
 		data := gofn.MultilineString(`col1,col2
 			1,2.2
 			100,3.3`)
@@ -939,8 +939,8 @@ func Test_Decode_specialTypes(t *testing.T) {
 		type Item struct {
 			ColX bool `csv:",optional"`
 			ColY bool
-			Col1 int         `csv:"col1"`
-			Col2 interface{} `csv:"col2"`
+			Col1 int `csv:"col1"`
+			Col2 any `csv:"col2"`
 		}
 
 		var v []Item
@@ -950,7 +950,7 @@ func Test_Decode_specialTypes(t *testing.T) {
 		assert.Equal(t, []Item{{Col1: 1, Col2: "2.2"}, {Col1: 100, Col2: "3.3"}}, v)
 	})
 
-	t.Run("#2: ptr interface{} type", func(t *testing.T) {
+	t.Run("#2: ptr to any type", func(t *testing.T) {
 		data := gofn.MultilineString(`col1,col2
 			1,2.2
 			100,3.3`)
@@ -958,16 +958,16 @@ func Test_Decode_specialTypes(t *testing.T) {
 		type Item struct {
 			ColX bool `csv:",optional"`
 			ColY bool
-			Col1 int          `csv:"col1"`
-			Col2 *interface{} `csv:"col2"`
+			Col1 int  `csv:"col1"`
+			Col2 *any `csv:"col2"`
 		}
 
 		var v []Item
 		ret, err := makeDecoder(data).Decode(&v)
 		assert.Nil(t, err)
 		assert.Equal(t, 3, ret.TotalRow())
-		assert.Equal(t, []Item{{Col1: 1, Col2: gofn.New[interface{}]("2.2")},
-			{Col1: 100, Col2: gofn.New[interface{}]("3.3")}}, v)
+		assert.Equal(t, []Item{{Col1: 1, Col2: gofn.New[any]("2.2")},
+			{Col1: 100, Col2: gofn.New[any]("3.3")}}, v)
 	})
 
 	t.Run("#3: all base types", func(t *testing.T) {

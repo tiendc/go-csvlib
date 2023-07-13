@@ -182,7 +182,7 @@ func (e *RowErrors) Unwrap() []error {
 
 type CellError struct {
 	err             error
-	fields          map[string]interface{}
+	fields          map[string]any
 	localizationKey string
 
 	column int
@@ -191,7 +191,7 @@ type CellError struct {
 }
 
 func NewCellError(err error, column int, header string) *CellError {
-	return &CellError{err: err, column: column, header: header, fields: map[string]interface{}{}}
+	return &CellError{err: err, column: column, header: header, fields: map[string]any{}}
 }
 
 func (e *CellError) Error() string {
@@ -225,7 +225,7 @@ func (e *CellError) Unwrap() error {
 	return e.err
 }
 
-func (e *CellError) WithParam(k string, v interface{}) *CellError {
+func (e *CellError) WithParam(k string, v any) *CellError {
 	e.fields[k] = v
 	return e
 }

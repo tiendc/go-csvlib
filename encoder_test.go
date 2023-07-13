@@ -756,10 +756,10 @@ func Test_Encode_specialCases(t *testing.T) {
 }
 
 func Test_Encode_specialTypes(t *testing.T) {
-	t.Run("#1: interface{} type", func(t *testing.T) {
+	t.Run("#1: any type", func(t *testing.T) {
 		type Item struct {
-			Col1 int         `csv:"col1"`
-			Col2 interface{} `csv:"col2"`
+			Col1 int `csv:"col1"`
+			Col2 any `csv:"col2"`
 		}
 
 		v := []Item{
@@ -779,17 +779,17 @@ func Test_Encode_specialTypes(t *testing.T) {
 			`), string(data))
 	})
 
-	t.Run("#2: ptr interface{} type", func(t *testing.T) {
+	t.Run("#2: ptr to any type", func(t *testing.T) {
 		type Item struct {
-			Col1 int          `csv:"col1"`
-			Col2 *interface{} `csv:"col2"`
+			Col1 int  `csv:"col1"`
+			Col2 *any `csv:"col2"`
 		}
 
 		v := []*Item{
-			{Col1: 1, Col2: gofn.New[interface{}](2.123)},
+			{Col1: 1, Col2: gofn.New[any](2.123)},
 			nil,
-			{Col1: 100, Col2: gofn.New[interface{}]("200")},
-			{Col1: 100, Col2: gofn.New[interface{}](true)},
+			{Col1: 100, Col2: gofn.New[any]("200")},
+			{Col1: 100, Col2: gofn.New[any](true)},
 		}
 		data, err := doEncode(v)
 		assert.Nil(t, err)

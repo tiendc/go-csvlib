@@ -43,9 +43,9 @@ type EncodeFunc func(v reflect.Value, omitempty bool) (string, error)
 type ProcessorFunc func(s string) string
 
 // ValidatorFunc function to validate the values of decoded cells
-type ValidatorFunc func(v interface{}) error
+type ValidatorFunc func(v any) error
 
-type ParameterMap map[string]interface{}
+type ParameterMap map[string]any
 
 // LocalizationFunc function to translate message into a specific language
 type LocalizationFunc func(key string, params ParameterMap) (string, error)
@@ -83,7 +83,7 @@ func Marshal(v any, options ...EncodeOption) ([]byte, error) {
 }
 
 // GetHeaderDetails get CSV header details from the given struct type
-func GetHeaderDetails(v interface{}, tagName string) (columnDetails []ColumnDetail, err error) {
+func GetHeaderDetails(v any, tagName string) (columnDetails []ColumnDetail, err error) {
 	t := reflect.TypeOf(v)
 	t = indirectType(t)
 	if t.Kind() != reflect.Struct {
@@ -108,7 +108,7 @@ func GetHeaderDetails(v interface{}, tagName string) (columnDetails []ColumnDeta
 }
 
 // GetHeader get CSV header from the given struct
-func GetHeader(v interface{}, tagName string) ([]string, error) {
+func GetHeader(v any, tagName string) ([]string, error) {
 	details, err := GetHeaderDetails(v, tagName)
 	if err != nil {
 		return nil, err
