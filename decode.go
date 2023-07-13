@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"reflect"
 	"strconv"
-
-	"github.com/tiendc/gofn"
 )
 
 var (
@@ -38,17 +36,35 @@ func getDecodeFuncBaseType(typ reflect.Type) (DecodeFunc, error) {
 	}
 	switch typ.Kind() { // nolint: exhaustive
 	case reflect.String:
-		return gofn.If(typeIsPtr, decodePtrStr, decodeStr), nil
+		if typeIsPtr {
+			return decodePtrStr, nil
+		}
+		return decodeStr, nil
 	case reflect.Int, reflect.Int64, reflect.Int32, reflect.Int16, reflect.Int8:
-		return gofn.If(typeIsPtr, decodePtrIntFunc(typ.Bits()), decodeIntFunc(typ.Bits())), nil
+		if typeIsPtr {
+			return decodePtrIntFunc(typ.Bits()), nil
+		}
+		return decodeIntFunc(typ.Bits()), nil
 	case reflect.Uint, reflect.Uint64, reflect.Uint32, reflect.Uint16, reflect.Uint8:
-		return gofn.If(typeIsPtr, decodePtrUintFunc(typ.Bits()), decodeUintFunc(typ.Bits())), nil
+		if typeIsPtr {
+			return decodePtrUintFunc(typ.Bits()), nil
+		}
+		return decodeUintFunc(typ.Bits()), nil
 	case reflect.Bool:
-		return gofn.If(typeIsPtr, decodePtrBool, decodeBool), nil
+		if typeIsPtr {
+			return decodePtrBool, nil
+		}
+		return decodeBool, nil
 	case reflect.Float32, reflect.Float64:
-		return gofn.If(typeIsPtr, decodePtrFloatFunc(typ.Bits()), decodeFloatFunc(typ.Bits())), nil
+		if typeIsPtr {
+			return decodePtrFloatFunc(typ.Bits()), nil
+		}
+		return decodeFloatFunc(typ.Bits()), nil
 	case reflect.Interface:
-		return gofn.If(typeIsPtr, decodePtrInterface, decodeInterface), nil
+		if typeIsPtr {
+			return decodePtrInterface, nil
+		}
+		return decodeInterface, nil
 	default:
 		return nil, fmt.Errorf("%w: %v", ErrTypeUnsupported, typ.Kind())
 	}

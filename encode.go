@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"reflect"
 	"strconv"
-
-	"github.com/tiendc/gofn"
 )
 
 var (
@@ -38,17 +36,35 @@ func getEncodeFuncBaseType(typ reflect.Type) (EncodeFunc, error) {
 	}
 	switch typ.Kind() { // nolint: exhaustive
 	case reflect.String:
-		return gofn.If(typeIsPtr, encodePtrStr, encodeStr), nil
+		if typeIsPtr {
+			return encodePtrStr, nil
+		}
+		return encodeStr, nil
 	case reflect.Int, reflect.Int64, reflect.Int32, reflect.Int16, reflect.Int8:
-		return gofn.If(typeIsPtr, encodePtrInt, encodeInt), nil
+		if typeIsPtr {
+			return encodePtrInt, nil
+		}
+		return encodeInt, nil
 	case reflect.Uint, reflect.Uint64, reflect.Uint32, reflect.Uint16, reflect.Uint8:
-		return gofn.If(typeIsPtr, encodePtrUint, encodeUint), nil
+		if typeIsPtr {
+			return encodePtrUint, nil
+		}
+		return encodeUint, nil
 	case reflect.Bool:
-		return gofn.If(typeIsPtr, encodePtrBool, encodeBool), nil
+		if typeIsPtr {
+			return encodePtrBool, nil
+		}
+		return encodeBool, nil
 	case reflect.Float32, reflect.Float64:
-		return gofn.If(typeIsPtr, encodePtrFloatFunc(typ.Bits()), encodeFloatFunc(typ.Bits())), nil
+		if typeIsPtr {
+			return encodePtrFloatFunc(typ.Bits()), nil
+		}
+		return encodeFloatFunc(typ.Bits()), nil
 	case reflect.Interface:
-		return gofn.If(typeIsPtr, encodePtrInterface, encodeInterface), nil
+		if typeIsPtr {
+			return encodePtrInterface, nil
+		}
+		return encodeInterface, nil
 	default:
 		return nil, fmt.Errorf("%w: %v", ErrTypeUnsupported, typ.Kind())
 	}
