@@ -324,7 +324,7 @@ func (r *CSVRenderer) renderCommonError(err error, params ParameterMap) string {
 
 func (r *CSVRenderer) localizeKey(key string, params ParameterMap) (string, error) {
 	if r.cfg.LocalizationFunc == nil {
-		return processParams(key, params), nil
+		return processTemplate(key, params)
 	}
 	msg, err := r.cfg.LocalizationFunc(key, params)
 	if err != nil {
@@ -337,10 +337,11 @@ func (r *CSVRenderer) localizeKey(key string, params ParameterMap) (string, erro
 
 func (r *CSVRenderer) localizeKeySkipError(key string, params ParameterMap) string {
 	s, err := r.localizeKey(key, params)
-	if err != nil {
-		s = key
+	if err == nil || r.cfg.LocalizationFunc == nil {
+		return s
 	}
-	return processParams(s, params)
+	s, _ = processTemplate(key, params)
+	return s
 }
 
 func (r *CSVRenderer) estimateCSVBuffer(data [][]string) int {

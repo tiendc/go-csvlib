@@ -250,7 +250,7 @@ func (r *SimpleRenderer) renderCommonError(err error, params ParameterMap) strin
 
 func (r *SimpleRenderer) localizeKey(key string, params ParameterMap) (string, error) {
 	if r.cfg.LocalizationFunc == nil {
-		return processParams(key, params), nil
+		return processTemplate(key, params)
 	}
 	msg, err := r.cfg.LocalizationFunc(key, params)
 	if err != nil {
@@ -263,8 +263,9 @@ func (r *SimpleRenderer) localizeKey(key string, params ParameterMap) (string, e
 
 func (r *SimpleRenderer) localizeKeySkipError(key string, params ParameterMap) string {
 	s, err := r.localizeKey(key, params)
-	if err != nil {
-		s = key
+	if err == nil || r.cfg.LocalizationFunc == nil {
+		return s
 	}
-	return processParams(s, params)
+	s, _ = processTemplate(key, params)
+	return s
 }
