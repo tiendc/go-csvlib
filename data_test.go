@@ -143,7 +143,7 @@ func localizeViVn(k string, params ParameterMap) (string, error) {
 	if !ok {
 		return "", fmt.Errorf("%w: '%s'", errKeyNotFound, k)
 	}
-	return processParams(s, params), nil
+	return processTemplate(s, params)
 }
 
 func localizeEnUs(k string, params ParameterMap) (string, error) {
@@ -151,7 +151,7 @@ func localizeEnUs(k string, params ParameterMap) (string, error) {
 	if !ok {
 		return "", fmt.Errorf("%w: '%s'", errKeyNotFound, k)
 	}
-	return processParams(s, params), nil
+	return processTemplate(s, params)
 }
 
 func localizeFail(k string, params ParameterMap) (string, error) {

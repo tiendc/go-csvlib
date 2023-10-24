@@ -1,8 +1,12 @@
 package csvlib
 
 import (
+	"bytes"
 	"fmt"
 	"strings"
+	"text/template"
+
+	"github.com/hashicorp/go-multierror"
 )
 
 func validateHeader(header []string) error {
@@ -20,14 +24,20 @@ func validateHeader(header []string) error {
 	return nil
 }
 
-func processParams(s string, params ParameterMap) string {
-	if len(params) == 0 {
-		return s
+func processTemplate(templ string, params ParameterMap) (detail string, retErr error) {
+	detail = templ
+	t, err := template.New("error").Parse(detail)
+	if err != nil {
+		retErr = multierror.Append(retErr, err)
+		return
 	}
-	for k, v := range params {
-		key := "{{." + k + "}}"
-		val := fmt.Sprintf("%v", v)
-		s = strings.ReplaceAll(s, key, val)
+
+	buf := bytes.NewBuffer(make([]byte, 0, 100)) // nolint: gomnd
+	err = t.Execute(buf, params)
+	if err != nil {
+		retErr = multierror.Append(retErr, err)
+	} else {
+		detail = buf.String()
 	}
-	return s
+	return
 }
