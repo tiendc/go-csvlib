@@ -1,3 +1,6 @@
+codecov:
+  token: 25dd913a-2bf1-4be3-b13e-c06b079a4438
+
 coverage:
   range: 80..100
   round: down
