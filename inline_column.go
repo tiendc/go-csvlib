@@ -14,11 +14,13 @@ const (
 	dynamicInlineColumnValues = "Values"
 )
 
+// InlineColumn represents inline columns of type `T`
 type InlineColumn[T any] struct {
 	Header []string
 	Values []T
 }
 
+// inlineColumnMeta metadata of inline columns
 type inlineColumnMeta struct {
 	headerText  []string
 	inlineType  inlineColumnStructType

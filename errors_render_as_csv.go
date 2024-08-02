@@ -46,7 +46,7 @@ type CSVRenderConfig struct {
 	// HeaderRenderFunc custom render function for rendering header row (optional)
 	HeaderRenderFunc func([]string, ParameterMap)
 
-	// CellRenderFunc custom render function for rendering a cell error (optional)
+	// CellRenderFunc custom render function for rendering a cell error (optional).
 	// The func can return ("", false) to skip rendering the cell error, return ("", true) to let the
 	// renderer continue using its solution, and return ("<str>", true) to override the value.
 	//
@@ -78,6 +78,8 @@ func defaultCSVRenderConfig() *CSVRenderConfig {
 	}
 }
 
+// CSVRenderer an implementation of error renderer which can produce messages
+// for the input errors as CSV output data.
 type CSVRenderer struct {
 	cfg               *CSVRenderConfig
 	sourceErr         *Errors
@@ -87,6 +89,7 @@ type CSVRenderer struct {
 	data              [][]string
 }
 
+// NewCSVRenderer creates a new CSVRenderer
 func NewCSVRenderer(err *Errors, options ...func(*CSVRenderConfig)) (*CSVRenderer, error) {
 	cfg := defaultCSVRenderConfig()
 	for _, opt := range options {
@@ -113,7 +116,7 @@ func NewCSVRenderer(err *Errors, options ...func(*CSVRenderConfig)) (*CSVRendere
 	return &CSVRenderer{cfg: cfg, sourceErr: err}, nil
 }
 
-// Render render Errors object as CSV rows data
+// Render renders Errors object as CSV rows data
 func (r *CSVRenderer) Render() (data [][]string, transErr error, err error) {
 	cfg := r.cfg
 	r.startCellErrIndex = 0
@@ -156,6 +159,7 @@ func (r *CSVRenderer) Render() (data [][]string, transErr error, err error) {
 	return r.data, r.transErr, nil
 }
 
+// RenderAsString renders the input as CSV string
 func (r *CSVRenderer) RenderAsString() (msg string, transErr error, err error) {
 	csvData, transErr, err := r.Render()
 	if err != nil {
@@ -170,6 +174,7 @@ func (r *CSVRenderer) RenderAsString() (msg string, transErr error, err error) {
 	return buf.String(), transErr, nil
 }
 
+// RenderTo renders the input as CSV string and writes it to the writer
 func (r *CSVRenderer) RenderTo(w Writer) (transErr error, err error) {
 	csvData, transErr, err := r.Render()
 	if err != nil {

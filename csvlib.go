@@ -53,6 +53,7 @@ type LocalizationFunc func(key string, params ParameterMap) (string, error)
 // OnCellErrorFunc function to be called when error happens on decoding cell value
 type OnCellErrorFunc func(e *CellError)
 
+// ColumnDetail details of a column parsed from a struct tag
 type ColumnDetail struct {
 	Name      string
 	Optional  bool
