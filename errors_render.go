@@ -12,9 +12,10 @@ const (
 )
 
 type ErrorRenderConfig struct {
-	// HeaderFormatKey header format string
+	// HeaderFormatKey header format string.
 	// You can use a localization key as the value to force the renderer to translate the key first.
 	// If the translation fails, the original value is used for next step.
+	//
 	// For example, header format key can be:
 	//   - "HEADER_FORMAT_KEY" (a localization key you define in your localization data such as a json file,
 	//         HEADER_FORMAT_KEY = "CSV decoding result: total errors is {{.TotalError}}")
@@ -31,8 +32,9 @@ type ErrorRenderConfig struct {
 	//   {{.Tab}}  - tab character
 	HeaderFormatKey string
 
-	// RowFormatKey format string for each row
+	// RowFormatKey format string for each row.
 	// Similar to the header format key, this can be a localization key or a direct string.
+	//
 	// For example, row format key can be:
 	//   - "ROW_FORMAT_KEY" (a localization key you define in your localization data such as a json file)
 	//   - "Row {{.Row}} (line {{.Line}}): {{.Error}}" (direct string)
@@ -64,7 +66,7 @@ type ErrorRenderConfig struct {
 	// LocalizationFunc function to translate message (optional)
 	LocalizationFunc LocalizationFunc
 
-	// CellRenderFunc custom render function for rendering a cell error (optional)
+	// CellRenderFunc custom render function for rendering a cell error (optional).
 	// The func can return ("", false) to skip rendering the cell error, return ("", true) to let the
 	// renderer continue using its solution, and return ("<str>", true) to override the value.
 	//
@@ -96,12 +98,15 @@ func defaultRenderConfig() *ErrorRenderConfig {
 	}
 }
 
+// SimpleRenderer a simple implementation of error renderer which can produce a text message
+// for the input errors.
 type SimpleRenderer struct {
 	cfg       *ErrorRenderConfig
 	sourceErr *Errors
 	transErr  error
 }
 
+// NewRenderer creates a new SimpleRenderer
 func NewRenderer(err *Errors, options ...func(*ErrorRenderConfig)) (*SimpleRenderer, error) {
 	cfg := defaultRenderConfig()
 	for _, opt := range options {
@@ -110,7 +115,8 @@ func NewRenderer(err *Errors, options ...func(*ErrorRenderConfig)) (*SimpleRende
 	return &SimpleRenderer{cfg: cfg, sourceErr: err}, nil
 }
 
-// Render render Errors object as text
+// Render renders Errors object as text.
+//
 // Sample output:
 //
 //	There are 5 total errors in your CSV file

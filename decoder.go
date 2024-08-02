@@ -12,24 +12,26 @@ import (
 	"github.com/tiendc/gofn"
 )
 
+// DecodeConfig configuration for decoding CSV data as structs
 type DecodeConfig struct {
-	// TagName tag name to parse the struct (default is "csv")
+	// TagName tag name to parse the struct (default is `csv`)
 	TagName string
 
-	// NoHeaderMode indicates the input data have no header (default is "false")
+	// NoHeaderMode indicates the input data have no header (default is `false`)
 	NoHeaderMode bool
 
-	// StopOnError when error occurs, stop the processing (default is "true")
+	// StopOnError when error occurs, stop the processing (default is `true`)
 	StopOnError bool
 
-	// TrimSpace trim all cell values before processing (default is "false")
+	// TrimSpace trim all cell values before processing (default is `false`)
 	TrimSpace bool
 
 	// RequireColumnOrder order of columns defined in struct must match the order of columns
 	// in the input data (default is "true")
 	RequireColumnOrder bool
 
-	// ParseLocalizedHeader header in the input data is localized (default is "false")
+	// ParseLocalizedHeader header in the input data is localized (default is `false`)
+	//
 	// For example:
 	//  type Student struct {
 	//     Name string `csv:"name"`  -> `name` is header key now, the actual header is localized based on the key
@@ -41,12 +43,14 @@ type DecodeConfig struct {
 	// (default is "false")
 	AllowUnrecognizedColumns bool
 
-	// TreatIncorrectStructureAsError treat incorrect data structure as error (default is "true")
+	// TreatIncorrectStructureAsError treat incorrect data structure as error (default is `true`)
+	//
 	// For example: header has 5 columns, if there is a row having 6 columns, it will be treated as error
 	// and the decoding process will stop even StopOnError flag is false.
 	TreatIncorrectStructureAsError bool
 
-	// DetectRowLine detect exact lines of rows (default is "false")
+	// DetectRowLine detect exact lines of rows (default is `false`)
+	//
 	// If turn this flag on, the input reader should be an instance of "encoding/csv" Reader
 	// as this lib uses Reader.FieldPos() function to get the line of a row.
 	DetectRowLine bool
@@ -79,7 +83,7 @@ func (c *DecodeConfig) ConfigureColumn(name string, fn func(*DecodeColumnConfig)
 	fn(columnCfg)
 }
 
-// DecodeColumnConfig configuration for a specific column
+// DecodeColumnConfig configuration for decoding a specific column
 type DecodeColumnConfig struct {
 	// TrimSpace if `true` and DecodeConfig.TrimSpace is `false`, only trim space this column
 	// (default is "false")
@@ -98,7 +102,7 @@ type DecodeColumnConfig struct {
 	// ValidatorFuncs a list of functions will be called after decoding (optional)
 	ValidatorFuncs []ValidatorFunc
 
-	// OnCellErrorFunc function will be called every time an error happens when decode a cell
+	// OnCellErrorFunc function will be called every time an error happens when decode a cell.
 	// This func can be helpful to set localization key and additional params for the error
 	// to localize the error message later on. (optional)
 	OnCellErrorFunc OnCellErrorFunc
@@ -108,8 +112,10 @@ func defaultDecodeColumnConfig() *DecodeColumnConfig {
 	return &DecodeColumnConfig{}
 }
 
+// DecodeOption function to modify decoding config
 type DecodeOption func(cfg *DecodeConfig)
 
+// DecodeResult decoding result
 type DecodeResult struct {
 	totalRow               int
 	unrecognizedColumns    []string
@@ -128,6 +134,7 @@ func (r *DecodeResult) MissingOptionalColumns() []string {
 	return r.missingOptionalColumns
 }
 
+// Decoder data structure of the default decoder
 type Decoder struct {
 	r                       Reader
 	cfg                     *DecodeConfig
@@ -142,6 +149,7 @@ type Decoder struct {
 	colsMeta                []*decodeColumnMeta
 }
 
+// NewDecoder creates a new Decoder object
 func NewDecoder(r Reader, options ...DecodeOption) *Decoder {
 	cfg := defaultDecodeConfig()
 	for _, opt := range options {
@@ -154,8 +162,8 @@ func NewDecoder(r Reader, options ...DecodeOption) *Decoder {
 	}
 }
 
-// Decode decode input data and store the result in the given variable
-// The input var must be a pointer to a slice, e.g. `*[]Student` (recommended) or `*[]*Student`
+// Decode decode input data and store the result in the given variable.
+// The input var must be a pointer to a slice, e.g. `*[]Student` (recommended) or `*[]*Student`.
 func (d *Decoder) Decode(v any) (*DecodeResult, error) {
 	if d.finished {
 		return nil, ErrFinished
@@ -216,8 +224,8 @@ func (d *Decoder) Decode(v any) (*DecodeResult, error) {
 	return d.result, nil
 }
 
-// DecodeOne decode the next one row data
-// The input var must be a pointer to a struct (e.g. *Student)
+// DecodeOne decode the next one row data.
+// The input var must be a pointer to a struct (e.g. *Student).
 // This func returns error of the current row processing only, after finishing the last row decoding,
 // call Finish() to get the overall result and error.
 func (d *Decoder) DecodeOne(v any) error {
@@ -271,8 +279,8 @@ func (d *Decoder) Finish() (*DecodeResult, error) {
 	return d.result, nil
 }
 
-// prepareDecode prepare for decoding by parsing the struct tags and build column decoders
-// This step is performed one time only before the first row decoding
+// prepareDecode prepare for decoding by parsing the struct tags and build column decoders.
+// This step is performed one time only before the first row decoding.
 func (d *Decoder) prepareDecode(v reflect.Value) error {
 	d.result = &DecodeResult{}
 	itemType, err := d.parseOutputVar(v)
@@ -446,7 +454,7 @@ func (d *Decoder) parseOutputVarOne(v reflect.Value) (val reflect.Value, itemTyp
 	return
 }
 
-// readRowData read data of all rows from the input to struct type
+// readRowData read data of all rows from the input to struct type.
 // If you use `encoding/csv` Reader, we can determine the lines of rows (via Reader.FieldPos func).
 // Otherwise, `line` will be set to `-1` which mean undetected.
 func (d *Decoder) readRowData() error {
@@ -814,7 +822,7 @@ func (d *Decoder) parseDynamicInlineColumns(colsMetaFromStruct []*decodeColumnMe
 	return newColsMetaFromStruct, nil
 }
 
-// buildColumnDecoders build decoders for each column type
+// buildColumnDecoders build decoders for each column type.
 // If the type of column is determined, e.g. `int`, the decode function for that will be determined at
 // the prepare step, and it will be fast at decoding. If it is `interface`, the decode function will parse
 // the actual type at decoding, and it will be slower.

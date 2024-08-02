@@ -9,6 +9,7 @@ import (
 	"github.com/tiendc/gofn"
 )
 
+// EncodeConfig configuration for encoding Go structs as CSV data
 type EncodeConfig struct {
 	// TagName tag name to parse the struct (default is `csv`)
 	TagName string
@@ -32,6 +33,7 @@ func defaultEncodeConfig() *EncodeConfig {
 	}
 }
 
+// ConfigureColumn configures encoding for a column by name
 func (c *EncodeConfig) ConfigureColumn(name string, fn func(*EncodeColumnConfig)) {
 	if c.columnConfigMap == nil {
 		c.columnConfigMap = map[string]*EncodeColumnConfig{}
@@ -44,9 +46,10 @@ func (c *EncodeConfig) ConfigureColumn(name string, fn func(*EncodeColumnConfig)
 	fn(columnCfg)
 }
 
+// EncodeColumnConfig configuration for encoding a specific column
 type EncodeColumnConfig struct {
 	// Skip whether skip encoding the column or not (this is equivalent to use `csv:"-"` in struct tag)
-	// (default is "false")
+	// (default is `false`)
 	Skip bool
 
 	// EncodeFunc custom encode function (optional)
@@ -60,8 +63,10 @@ func defaultEncodeColumnConfig() *EncodeColumnConfig {
 	return &EncodeColumnConfig{}
 }
 
+// EncodeOption function to modify encoding config
 type EncodeOption func(cfg *EncodeConfig)
 
+// Encoder data structure of the default encoder
 type Encoder struct {
 	w                       Writer
 	cfg                     *EncodeConfig
@@ -74,6 +79,7 @@ type Encoder struct {
 	colsMeta                []*encodeColumnMeta
 }
 
+// NewEncoder creates a new Encoder object
 func NewEncoder(w Writer, options ...EncodeOption) *Encoder {
 	cfg := defaultEncodeConfig()
 	for _, opt := range options {
@@ -85,8 +91,8 @@ func NewEncoder(w Writer, options ...EncodeOption) *Encoder {
 	}
 }
 
-// Encode encode input data stored in the given variable
-// The input var must be a slice, e.g. `[]Student` or `[]*Student`
+// Encode encode input data stored in the given variable.
+// The input var must be a slice, e.g. `[]Student` or `[]*Student`.
 func (e *Encoder) Encode(v any) error {
 	if e.finished {
 		return ErrFinished
@@ -162,6 +168,7 @@ func (e *Encoder) EncodeOne(v any) error {
 	return nil
 }
 
+// Finish encoding, after calling this func, you can't encode more
 func (e *Encoder) Finish() error {
 	e.finished = true
 	return e.err

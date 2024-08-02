@@ -8,7 +8,7 @@ import (
 	"unsafe"
 )
 
-// ValidatorLT validate a value to be less than the given value
+// ValidatorLT validates a value to be less than the given value
 func ValidatorLT[T LTComparable](val T) ValidatorFunc {
 	return func(v any) error {
 		v1, ok := v.(T)
@@ -22,7 +22,7 @@ func ValidatorLT[T LTComparable](val T) ValidatorFunc {
 	}
 }
 
-// ValidatorLTE validate a value to be less than or equal to the given value
+// ValidatorLTE validates a value to be less than or equal to the given value
 func ValidatorLTE[T LTComparable](val T) ValidatorFunc {
 	return func(v any) error {
 		v1, ok := v.(T)
@@ -36,7 +36,7 @@ func ValidatorLTE[T LTComparable](val T) ValidatorFunc {
 	}
 }
 
-// ValidatorGT validate a value to be greater than the given value
+// ValidatorGT validates a value to be greater than the given value
 func ValidatorGT[T LTComparable](val T) ValidatorFunc {
 	return func(v any) error {
 		v1, ok := v.(T)
@@ -50,7 +50,7 @@ func ValidatorGT[T LTComparable](val T) ValidatorFunc {
 	}
 }
 
-// ValidatorGTE validate a value to be greater than or equal to the given value
+// ValidatorGTE validates a value to be greater than or equal to the given value
 func ValidatorGTE[T LTComparable](val T) ValidatorFunc {
 	return func(v any) error {
 		v1, ok := v.(T)
@@ -64,7 +64,7 @@ func ValidatorGTE[T LTComparable](val T) ValidatorFunc {
 	}
 }
 
-// ValidatorRange validate a value to be in the given range (min and max are inclusive)
+// ValidatorRange validates a value to be in the given range (min and max are inclusive)
 func ValidatorRange[T LTComparable](min, max T) ValidatorFunc {
 	return func(v any) error {
 		v1, ok := v.(T)
@@ -78,7 +78,7 @@ func ValidatorRange[T LTComparable](min, max T) ValidatorFunc {
 	}
 }
 
-// ValidatorIN validate a value to be one of the specific values
+// ValidatorIN validates a value to be one of the specific values
 func ValidatorIN[T LTComparable](vals ...T) ValidatorFunc {
 	return func(v any) error {
 		v1, ok := v.(T)
@@ -94,7 +94,7 @@ func ValidatorIN[T LTComparable](vals ...T) ValidatorFunc {
 	}
 }
 
-// ValidatorStrLen validate a string to have length in the given range
+// ValidatorStrLen validates a string to have length in the given range.
 // Pass argument -1 to skip the equivalent validation.
 func ValidatorStrLen[T StringEx](minLen, maxLen int, lenFuncs ...func(s string) int) ValidatorFunc {
 	return func(v any) error {
@@ -114,7 +114,7 @@ func ValidatorStrLen[T StringEx](minLen, maxLen int, lenFuncs ...func(s string) 
 	}
 }
 
-// ValidatorStrPrefix validate a string to have prefix matching the given one
+// ValidatorStrPrefix validates a string to have prefix matching the given one
 func ValidatorStrPrefix[T StringEx](prefix string) ValidatorFunc {
 	return func(v any) error {
 		s, ok := v.(T)
@@ -128,7 +128,7 @@ func ValidatorStrPrefix[T StringEx](prefix string) ValidatorFunc {
 	}
 }
 
-// ValidatorStrSuffix validate a string to have suffix matching the given one
+// ValidatorStrSuffix validates a string to have suffix matching the given one
 func ValidatorStrSuffix[T StringEx](suffix string) ValidatorFunc {
 	return func(v any) error {
 		s, ok := v.(T)
