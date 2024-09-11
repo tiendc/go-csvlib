@@ -304,7 +304,7 @@ func (e *Encoder) validateColumnsMeta(colsMeta []*encodeColumnMeta) error {
 	cfg := e.cfg
 	// Make sure all column options valid
 	for colKey := range cfg.columnConfigMap {
-		if !gofn.ContainPred(colsMeta, func(colMeta *encodeColumnMeta) bool {
+		if !gofn.ContainBy(colsMeta, func(colMeta *encodeColumnMeta) bool {
 			return colMeta.headerKey == colKey || colMeta.parentKey == colKey
 		}) {
 			return fmt.Errorf("%w: column \"%s\" not found", ErrConfigOptionInvalid, colKey)

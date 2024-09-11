@@ -16,13 +16,13 @@ func getDecodeFunc(typ reflect.Type) (DecodeFunc, error) {
 	if typ.Implements(csvUnmarshaler) {
 		return decodeCSVUnmarshaler, nil
 	}
-	if reflect.PtrTo(typ).Implements(csvUnmarshaler) {
+	if reflect.PointerTo(typ).Implements(csvUnmarshaler) {
 		return decodePtrCSVUnmarshaler, nil
 	}
 	if typ.Implements(textUnmarshaler) {
 		return decodeTextUnmarshaler, nil
 	}
-	if reflect.PtrTo(typ).Implements(textUnmarshaler) {
+	if reflect.PointerTo(typ).Implements(textUnmarshaler) {
 		return decodePtrTextUnmarshaler, nil
 	}
 	return getDecodeFuncBaseType(typ)

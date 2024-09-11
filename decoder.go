@@ -195,7 +195,7 @@ func (d *Decoder) Decode(v any) (*DecodeResult, error) {
 	for !d.shouldStop && len(d.rowsData) > 0 {
 		// Reduce memory consumption by splitting the source data into chunks (10000 items each)
 		// After each chunk is processed, resize the slice to allow Go to free the memory when necessary
-		chunkSz := gofn.Min(10000, len(d.rowsData)) // nolint: gomnd
+		chunkSz := gofn.Min(10000, len(d.rowsData)) //nolint:mnd
 		chunk := d.rowsData[0:chunkSz]
 		d.rowsData = d.rowsData[chunkSz:]
 
@@ -470,7 +470,7 @@ func (d *Decoder) readRowData() error {
 		ableToGetLine = false
 		getLine = nil
 	}
-	rowDataItems := make([]*rowData, 0, 10000) // nolint: gomnd
+	rowDataItems := make([]*rowData, 0, 10000) //nolint:mnd
 
 	for ; ; row++ {
 		records, err := r.Read()
@@ -590,7 +590,7 @@ func (d *Decoder) validateColumnsMeta(colsMeta, colsMetaFromStruct []*decodeColu
 	cfg := d.cfg
 	// Make sure all column options valid
 	for colKey := range cfg.columnConfigMap {
-		if !gofn.ContainPred(colsMetaFromStruct, func(colMeta *decodeColumnMeta) bool {
+		if !gofn.ContainBy(colsMetaFromStruct, func(colMeta *decodeColumnMeta) bool {
 			return colMeta.headerKey == colKey || colMeta.parentKey == colKey
 		}) {
 			return fmt.Errorf("%w: column \"%s\" not found", ErrConfigOptionInvalid, colKey)
@@ -789,7 +789,7 @@ func (d *Decoder) parseInlineColumnDynamicType(typ reflect.Type, parent *decodeC
 
 func (d *Decoder) parseDynamicInlineColumns(colsMetaFromStruct []*decodeColumnMeta, fileHeader []string) (
 	[]*decodeColumnMeta, error) {
-	newColsMetaFromStruct := make([]*decodeColumnMeta, 0, len(colsMetaFromStruct)*2) // nolint: gomnd
+	newColsMetaFromStruct := make([]*decodeColumnMeta, 0, len(colsMetaFromStruct)*2) //nolint:mnd
 	fileHeaderIndex := 0
 	for i, colMetaFromStruct := range colsMetaFromStruct {
 		if colMetaFromStruct.inlineColumnMeta == nil {
