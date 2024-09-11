@@ -16,13 +16,13 @@ func getEncodeFunc(typ reflect.Type) (EncodeFunc, error) {
 	if typ.Implements(csvMarshaler) {
 		return encodeCSVMarshaler, nil
 	}
-	if reflect.PtrTo(typ).Implements(csvMarshaler) {
+	if reflect.PointerTo(typ).Implements(csvMarshaler) {
 		return encodePtrCSVMarshaler, nil
 	}
 	if typ.Implements(textMarshaler) {
 		return encodeTextMarshaler, nil
 	}
-	if reflect.PtrTo(typ).Implements(textMarshaler) {
+	if reflect.PointerTo(typ).Implements(textMarshaler) {
 		return encodePtrTextMarshaler, nil
 	}
 	return getEncodeFuncBaseType(typ)

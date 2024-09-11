@@ -1,4 +1,4 @@
-name: Go
+name: Tests
 
 on:
   push:
@@ -13,9 +13,9 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        go: ["1.18.x", "1.22.x"]
+        go: ["1.18.x", "1.22.x", "1.23.x"]
         include:
-          - go: 1.22.x
+          - go: 1.23.x
             latest: true
 
     steps:
@@ -46,3 +46,5 @@ jobs:
 
       - name: Upload coverage to codecov.io
         uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}

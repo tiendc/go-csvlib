@@ -32,7 +32,7 @@ func processTemplate(templ string, params ParameterMap) (detail string, retErr e
 		return
 	}
 
-	buf := bytes.NewBuffer(make([]byte, 0, 100)) // nolint: gomnd
+	buf := bytes.NewBuffer(make([]byte, 0, 100)) //nolint:mnd
 	err = t.Execute(buf, params)
 	if err != nil {
 		retErr = multierror.Append(retErr, err)

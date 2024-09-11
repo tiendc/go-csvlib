@@ -71,7 +71,7 @@ func defaultCSVRenderConfig() *CSVRenderConfig {
 		RenderHeader:                 true,
 		RenderRowNumberColumnIndex:   0,
 		RenderLineNumberColumnIndex:  1,
-		RenderCommonErrorColumnIndex: 2,
+		RenderCommonErrorColumnIndex: 2, //nolint:mnd
 
 		LocalizeCellFields: true,
 		LocalizeCellHeader: true,
@@ -96,7 +96,7 @@ func NewCSVRenderer(err *Errors, options ...func(*CSVRenderConfig)) (*CSVRendere
 		opt(cfg)
 	}
 	// Validate/Correct the base columns to render
-	baseColumns := make([]*int, 0, 3) // nolint: gomnd
+	baseColumns := make([]*int, 0, 3) //nolint:mnd
 	if cfg.RenderRowNumberColumnIndex >= 0 {
 		baseColumns = append(baseColumns, &cfg.RenderRowNumberColumnIndex)
 	}
@@ -351,7 +351,7 @@ func (r *CSVRenderer) localizeKeySkipError(key string, params ParameterMap) stri
 
 func (r *CSVRenderer) estimateCSVBuffer(data [][]string) int {
 	if len(data) <= 1 {
-		return 512 // nolint: gomnd
+		return 512 //nolint:mnd
 	}
 	row := data[1]
 	rowSz := 0
